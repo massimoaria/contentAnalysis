@@ -26,3 +26,5 @@ Suggests:
     RColorBrewer,
     scales,
     stringdist
+URL: https://github.com/massimoaria/contentAnalysis
+BugReports: https://github.com/massimoaria/contentAnalysis/issues
