@@ -1,0 +1,19 @@
+#' @importFrom utils data head
+#' @importFrom stats setNames
+#' @importFrom dplyr row_number
+NULL
+
+utils::globalVariables(c(
+  "start_pos", "citation_text", "citation_type", "author_part", "year_part",
+  "citation_id", "standardized_citation", "word", "stop_words", "ngram",
+  "segment", "section", "total_citations", "original_complex_citation",
+  "author", "year", "article_title", "journal", "ref_first_author",
+  "ref_id", "ref_full_text", "ref_authors", "ref_year",
+  "ref_first_author_normalized", "n_authors", "citation_text_clean",
+  "matched_ref_id", "match_confidence", "cite_info",
+  "ref_second_author_normalized", "cite_author", "cite_second_author",
+  "cite_year", "cite_has_etal", "authors_section", "ref_second_author",
+  "segment_id", "segment_name", "segment_type", "ngram_size",
+  "total_words", "relative_frequency", "segment_name.x", "segment_name.y",
+  "n", "."
+))

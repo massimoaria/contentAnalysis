@@ -1,0 +1,28 @@
+Package: contentAnalysis
+Title: Scientific Content and Citation Analysis from PDF Documents
+Version: 0.1.0
+Authors@R: 
+    person("Massimo", "Aria", , "aria@unina.it", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-8517-9411"))
+Description: Provides comprehensive tools for extracting and analyzing scientific 
+    content from PDF documents, including citation extraction, reference matching, 
+    text analysis, and bibliometric indicators. Supports multi-column PDF layouts,
+    CrossRef API integration, and advanced citation parsing.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports: 
+    dplyr,
+    httr2,
+    magrittr,
+    pdftools,
+    stringr,
+    tibble,
+    tidyr,
+    tidytext
+Suggests: 
+    plotly,
+    RColorBrewer,
+    scales,
+    stringdist
