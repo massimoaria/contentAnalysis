@@ -136,7 +136,7 @@ dist %>%
   arrange(segment_name, desc(percentage))
 
 # Visualize trends
-plot_word_distribution(dist, plot_type = "area", smooth = FALSE)
+#plot_word_distribution(dist, plot_type = "area", smooth = FALSE)
 ```
 
 ## Main Functions
