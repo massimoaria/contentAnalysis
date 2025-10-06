@@ -3,10 +3,10 @@
 This folder contains example papers for testing and demonstration.
 
 ## example_paper.pdf
-- Title: Identifying and prioritizing health research funding agencies globally
-- DOI: 10.1016/j.healthpol.2022.05.004
+- Title: A comparison among interpretative proposals for Random Forests
+- DOI: 10.1016/j.mlwa.2021.100094
 - License: Open Access (CC BY)
-- Source: https://www.sciencedirect.com/science/article/pii/S266682702200113X
+- Source: https://doi.org/10.1016/j.mlwa.2021.100094
 
 ## Usage
 

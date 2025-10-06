@@ -29,7 +29,7 @@ get_example_paper <- function(example = "example_paper.pdf") {
 
   if (example == "example_paper.pdf") {
     # GitHub raw URL
-    github_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/main/inst/examples/example_paper.pdf"
+    github_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/master/inst/examples/example_paper.pdf"
     temp_path <- file.path(tempdir(), example)
 
     tryCatch({

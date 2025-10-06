@@ -1,4 +1,4 @@
-#' @importFrom utils data head
+#' @importFrom utils data head download.file
 #' @importFrom stats setNames
 #' @importFrom dplyr row_number
 NULL
