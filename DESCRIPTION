@@ -22,9 +22,12 @@ Imports:
     tidyr,
     tidytext
 Suggests: 
+    knitr,
     plotly,
     RColorBrewer,
+    rmarkdown,
     scales,
     stringdist
 URL: https://github.com/massimoaria/contentAnalysis
 BugReports: https://github.com/massimoaria/contentAnalysis/issues
+VignetteBuilder: knitr

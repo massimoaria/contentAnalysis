@@ -36,35 +36,106 @@ devtools::install_github("yourusername/contentAnalysis")
 
 ## Example
 
-Basic workflow for analyzing a scientific paper:
+Complete workflow analyzing a real scientific paper:
 
 ``` r
 library(contentAnalysis)
 
-# Import PDF with automatic section detection
-doc <- pdf2txt_auto("path/to/paper.pdf")
+# Download example paper (open access)
+paper_url <- "https://www.sciencedirect.com/science/article/pii/S266682702200113X/pdfft?md5=e53e548eac3ea9820225f39df8fc10da&pid=1-s2.0-S266682702200113X-main.pdf"
+download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 
-# Perform comprehensive content analysis
+# Import PDF with automatic section detection
+doc <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
+
+# Check detected sections
+names(doc)
+#> [1] "Full_text"    "Abstract"     "Introduction" "Methods"      
+#> [5] "Results"      "Discussion"   "Conclusion"   "References"
+
+# Perform comprehensive content analysis with CrossRef
 analysis <- analyze_scientific_content_enhanced(
   text = doc,
-  doi = "10.xxxx/xxxxx",  # Optional: for CrossRef reference retrieval
+  doi = "10.1016/j.healthpol.2022.05.004",
   mailto = "your@email.com"
 )
 
-# View summary
+# View summary statistics
 analysis$summary
+#> $total_words_analyzed
+#> [1] 4523
+#> 
+#> $citations_extracted
+#> [1] 45
+#> 
+#> $references_parsed
+#> [1] 42
 
-# Examine citations
-head(analysis$citations)
-table(analysis$citation_metrics$type_distribution)
+# Examine citations by type
+analysis$citation_metrics$type_distribution
+#>                citation_type  n percentage
+#> 1        author_year_basic   28      62.2
+#> 2        narrative_single   12      26.7
+#> 3   multiple_citations_semicolon    5      11.1
 
-# Check citation-reference matching quality
+# Check matching quality
 print_matching_diagnostics(analysis)
+#> Total citations: 45 
+#> Total references parsed: 42 
+#> Match rate: 93.3 %
+#> High confidence matches: 40
 
-# Track specific words across sections
-words <- c("machine learning", "neural network", "accuracy")
-dist <- calculate_word_distribution(doc, words)
-plot_word_distribution(dist)
+# Analyze citation contexts
+head(analysis$citation_contexts[, c("citation_text_clean", "section", "full_context")])
+
+# Track methodological terms across sections
+method_terms <- c("machine learning", "regression", "validation", "dataset")
+word_dist <- calculate_word_distribution(doc, method_terms)
+
+# Create interactive visualization
+plot_word_distribution(word_dist, plot_type = "line", show_points = TRUE)
+
+# Examine most frequent words
+head(analysis$word_frequencies, 10)
+
+# Citation co-occurrence network
+head(analysis$network_data)
+```
+
+### Working with references
+
+``` r
+# View parsed references
+head(analysis$parsed_references[, c("ref_first_author", "ref_year", "ref_full_text")])
+
+# Find citations to specific author
+library(dplyr)
+analysis$citation_references_mapping %>%
+  filter(grepl("Smith", ref_authors, ignore.case = TRUE))
+
+# Citations by section
+analysis$citation_metrics$section_distribution
+#>       section  n percentage
+#> 1 Introduction 15      33.3
+#> 2     Methods  8      17.8
+#> 3     Results 12      26.7
+#> 4  Discussion 10      22.2
+```
+
+### Advanced: Word distribution analysis
+
+``` r
+# Track disease-related terms
+disease_terms <- c("covid", "pandemic", "health", "policy", "vaccination")
+dist <- calculate_word_distribution(doc, disease_terms, use_sections = TRUE)
+
+# View frequencies by section
+dist %>%
+  select(segment_name, word, count, percentage) %>%
+  arrange(segment_name, desc(percentage))
+
+# Visualize trends
+plot_word_distribution(dist, plot_type = "area", smooth = FALSE)
 ```
 
 ## Main Functions

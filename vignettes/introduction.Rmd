@@ -1,0 +1,321 @@
+---
+title: "Introduction to contentAnalysis"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Introduction to contentAnalysis}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE  # Set to TRUE if you want to run the examples
+)
+```
+```{r setup}
+library(contentAnalysis)
+library(dplyr)
+```
+
+## Introduction
+
+The `contentAnalysis` package provides comprehensive tools for extracting and analyzing scientific content from PDF documents. This vignette demonstrates the main features using a real open-access scientific paper.
+
+## Getting Started
+
+### Download Example Paper
+
+We'll use an open-access paper on health policy:
+```{r download}
+# Download example paper
+paper_url <- "https://www.sciencedirect.com/science/article/pii/S266682702200113X/pdfft?md5=e53e548eac3ea9820225f39df8fc10da&pid=1-s2.0-S266682702200113X-main.pdf"
+download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
+```
+
+## PDF Import and Section Detection
+
+### Basic Import
+```{r import-basic}
+# Import with automatic section detection
+doc <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
+
+# Check what sections were detected
+names(doc)
+```
+
+The function automatically detects common academic sections like Abstract, Introduction, Methods, Results, Discussion, etc.
+
+### Manual Column Specification
+
+For papers with specific layouts:
+```{r import-manual}
+# Single column
+doc_single <- pdf2txt_auto("example_paper.pdf", n_columns = 1)
+
+# Three columns
+doc_three <- pdf2txt_auto("example_paper.pdf", n_columns = 3)
+
+# Without section splitting
+text_only <- pdf2txt_auto("example_paper.pdf", sections = FALSE)
+```
+
+## Comprehensive Content Analysis
+
+### Full Analysis with CrossRef Integration
+```{r analysis}
+analysis <- analyze_scientific_content_enhanced(
+  text = doc,
+  doi = "10.1016/j.healthpol.2022.05.004",  # Optional but recommended
+  mailto = "your@email.com",                 # Required for CrossRef
+  window_size = 10,                          # Words around citations
+  remove_stopwords = TRUE,
+  ngram_range = c(1, 3)
+)
+```
+
+### Understanding the Results
+
+The analysis object contains multiple components:
+```{r results-structure}
+names(analysis)
+#> [1] "text_analytics"              "citations"                  
+#> [3] "citation_contexts"           "citation_metrics"           
+#> [5] "citation_references_mapping" "parsed_references"          
+#> [7] "word_frequencies"            "ngrams"                     
+#> [9] "network_data"                "summary"
+```
+
+### Summary Statistics
+```{r summary}
+analysis$summary
+```
+
+Key metrics include:
+- Total words analyzed
+- Number of citations extracted
+- Citation types (narrative vs. parenthetical)
+- Number of references matched
+- Lexical diversity
+- Citation density per 1000 words
+
+## Citation Analysis
+
+### Citation Extraction
+
+The package detects multiple citation formats:
+```{r citations}
+# View all citations
+head(analysis$citations)
+
+# Citation types found
+table(analysis$citations$citation_type)
+
+# Citations by section
+analysis$citation_metrics$section_distribution
+```
+
+### Citation Contexts
+
+Extract the text surrounding each citation:
+```{r contexts}
+# View citation contexts
+contexts <- analysis$citation_contexts %>%
+  select(citation_text_clean, section, words_before, words_after)
+
+head(contexts)
+
+# Find citations in Introduction
+intro_citations <- analysis$citation_contexts %>%
+  filter(section == "Introduction")
+
+nrow(intro_citations)
+```
+
+## Reference Matching
+
+### Automatic Matching
+
+Citations are automatically matched to references:
+```{r matching}
+# View matching results
+matched <- analysis$citation_references_mapping %>%
+  select(citation_text_clean, cite_author, cite_year, 
+         ref_full_text, match_confidence)
+
+head(matched)
+
+# Match quality
+table(matched$match_confidence)
+```
+
+### Diagnostic Information
+```{r diagnostics}
+print_matching_diagnostics(analysis)
+```
+
+### Manual Reference Parsing
+
+If you don't have a DOI or prefer text parsing:
+```{r manual-refs}
+refs <- parse_references_section(doc$References)
+head(refs)
+```
+
+## Text Analysis
+
+### Word Frequencies
+```{r word-freq}
+# Top 20 most frequent words
+head(analysis$word_frequencies, 20)
+
+# Words related to specific topic
+covid_words <- analysis$word_frequencies %>%
+  filter(grepl("covid|pandemic|health", word, ignore.case = TRUE))
+```
+
+### N-gram Analysis
+```{r ngrams}
+# Bigrams
+head(analysis$ngrams$`2gram`)
+
+# Trigrams
+head(analysis$ngrams$`3gram`)
+```
+
+## Word Distribution Analysis
+
+Track how specific terms are distributed across the document:
+```{r word-dist}
+# Terms of interest
+terms <- c("health", "policy", "covid", "vaccination", "pandemic")
+
+# Calculate distribution
+dist <- calculate_word_distribution(
+  text = doc,
+  selected_words = terms,
+  use_sections = "auto"
+)
+
+# View results
+dist %>%
+  select(segment_name, word, count, percentage) %>%
+  arrange(segment_name, desc(percentage))
+```
+
+### Visualization
+```{r plot, fig.width=8, fig.height=5}
+# Interactive plot
+plot_word_distribution(
+  dist, 
+  plot_type = "line",
+  show_points = TRUE
+)
+
+# Area plot
+plot_word_distribution(
+  dist, 
+  plot_type = "area",
+  smooth = FALSE
+)
+```
+
+## Advanced Examples
+
+### Finding Specific Citations
+```{r find-citations}
+# Citations to specific author
+analysis$citation_references_mapping %>%
+  filter(grepl("Smith", ref_authors, ignore.case = TRUE))
+
+# Citations in Discussion section
+analysis$citations %>%
+  filter(section == "Discussion") %>%
+  select(citation_text, citation_type)
+```
+
+### Citation Co-occurrence Network
+```{r network}
+# View co-occurring citations
+network <- analysis$network_data
+head(network)
+
+# Citations appearing close together
+close_citations <- network %>%
+  filter(distance < 100)  # Within 100 characters
+```
+
+### Custom Stopwords
+```{r custom-stop}
+custom_stops <- c("however", "therefore", "thus", "moreover")
+
+analysis_custom <- analyze_scientific_content_enhanced(
+  text = doc,
+  custom_stopwords = custom_stops,
+  remove_stopwords = TRUE
+)
+```
+
+### Segment-based Analysis
+
+For documents without clear sections:
+```{r segments}
+# Divide into 20 equal segments
+dist_segments <- calculate_word_distribution(
+  text = doc,
+  selected_words = terms,
+  use_sections = FALSE,
+  n_segments = 20
+)
+
+plot_word_distribution(dist_segments)
+```
+
+## Export Results
+
+### Save to CSV
+```{r export}
+# Export citations
+write.csv(analysis$citations, "citations.csv", row.names = FALSE)
+
+# Export matched references
+write.csv(analysis$citation_references_mapping, 
+          "matched_citations.csv", row.names = FALSE)
+
+# Export word frequencies
+write.csv(analysis$word_frequencies, 
+          "word_frequencies.csv", row.names = FALSE)
+```
+
+## Workflow for Multiple Papers
+```{r batch, eval=FALSE}
+# Process multiple papers
+papers <- c("paper1.pdf", "paper2.pdf", "paper3.pdf")
+dois <- c("10.xxxx/1", "10.xxxx/2", "10.xxxx/3")
+
+results <- list()
+for (i in seq_along(papers)) {
+  doc <- pdf2txt_auto(papers[i], n_columns = 2)
+  results[[i]] <- analyze_scientific_content_enhanced(
+    doc, 
+    doi = dois[i],
+    mailto = "your@email.com"
+  )
+}
+
+# Combine citation counts
+citation_counts <- sapply(results, function(x) x$summary$citations_extracted)
+names(citation_counts) <- papers
+```
+
+## Conclusion
+
+The `contentAnalysis` package provides a complete toolkit for analyzing scientific papers:
+
+1. **Import**: Handle multi-column PDFs with structure preservation
+2. **Extract**: Detect citations in multiple formats
+3. **Match**: Link citations to references automatically
+4. **Analyze**: Word frequencies, n-grams, citation contexts
+5. **Visualize**: Interactive plots of word distributions
+
+For more information, see the function documentation: `?analyze_scientific_content_enhanced`
