@@ -77,7 +77,7 @@ For papers with specific layouts:
 ### Full Analysis with CrossRef Integration
 
 ```{r analysis}
-analysis <- analyze_scientific_content_enhanced(
+analysis <- analyze_scientific_content(
   text = doc,
   doi = "10.1016/j.mlwa.2021.100094",  # Optional but recommended
   mailto = "your@email.com",                 # Required for CrossRef
@@ -269,7 +269,7 @@ close_citations <- network %>%
 ```{r custom-stop}
 custom_stops <- c("however", "therefore", "thus", "moreover")
 
-analysis_custom <- analyze_scientific_content_enhanced(
+analysis_custom <- analyze_scientific_content(
   text = doc,
   custom_stopwords = custom_stops,
   remove_stopwords = TRUE
@@ -319,7 +319,7 @@ dois <- c("10.xxxx/1", "10.xxxx/2", "10.xxxx/3")
 results <- list()
 for (i in seq_along(papers)) {
   doc <- pdf2txt_auto(papers[i], n_columns = 2)
-  results[[i]] <- analyze_scientific_content_enhanced(
+  results[[i]] <- analyze_scientific_content(
     doc, 
     doi = dois[i],
     mailto = "your@email.com"
@@ -343,4 +343,4 @@ scientific papers:
 5.  **Visualize**: Interactive plots of word distributions
 
 For more information, see the function documentation:
-`?analyze_scientific_content_enhanced`
+`?analyze_scientific_content`

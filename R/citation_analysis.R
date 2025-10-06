@@ -8,7 +8,8 @@
 #' @return Citations data frame with segment/section information
 #'
 #' @keywords internal
-#' @noRd
+#'
+#' @export
 #' @importFrom dplyr mutate
 map_citations_to_segments <- function(citations_df,
                                       text,
@@ -139,7 +140,7 @@ map_citations_to_segments <- function(citations_df,
 #' @examples
 #' \dontrun{
 #' doc <- pdf2txt_auto("paper.pdf")
-#' analysis <- analyze_scientific_content_enhanced(
+#' analysis <- analyze_scientific_content(
 #'   doc,
 #'   doi = "10.xxxx/xxxxx",
 #'   mailto = "your@email.com"
@@ -155,7 +156,7 @@ map_citations_to_segments <- function(citations_df,
 #' @importFrom dplyr mutate select filter bind_rows arrange desc left_join count rowwise ungroup slice_head rename
 #' @importFrom stringr str_replace_all str_trim str_locate_all str_sub str_detect str_extract str_split str_extract_all str_length str_count str_remove str_squish str_to_title str_to_lower
 #' @importFrom tidytext unnest_tokens
-analyze_scientific_content_enhanced <- function(text,
+analyze_scientific_content <- function(text,
                                                 doi = NULL,
                                                 mailto = NULL,
                                                 window_size = 10,
@@ -587,8 +588,14 @@ analyze_scientific_content_enhanced <- function(text,
   # Citation-reference mapping
   citation_references_mapping <- NULL
   parsed_references <- NULL
+  if (is.null(mailto)) {
+    mailto <- Sys.getenv("CROSSREF_MAILTO")
+    if (mailto == "") {
+      mailto <- "your@email.com"
+    }
+  }
 
-  if (!is.null(doi) && !is.null(mailto)) {
+  if (!is.null(doi)) {
     tryCatch({
       message("Attempting to retrieve references from CrossRef...")
       refs_crossref <- get_crossref_references(doi, mailto)
@@ -611,7 +618,8 @@ analyze_scientific_content_enhanced <- function(text,
             n_authors = 1
           ) %>%
           dplyr::select(ref_id, ref_full_text, ref_authors, ref_year,
-                        ref_first_author, ref_first_author_normalized, n_authors)
+                        ref_first_author, ref_first_author_normalized, n_authors) %>%
+          mutate(ref_source = "crossref")
 
         message(paste("Successfully retrieved", nrow(parsed_references), "references from CrossRef"))
       }
@@ -622,7 +630,8 @@ analyze_scientific_content_enhanced <- function(text,
 
   if (is.null(parsed_references) && !is.null(references_section) && references_section != "") {
     message("Parsing references from text...")
-    parsed_references <- parse_references_section(references_section)
+    parsed_references <- parse_references_section(references_section) %>%
+      mutate(ref_source = "parsed")
   }
 
   if (!is.null(parsed_references) && nrow(parsed_references) > 0 &&

@@ -61,7 +61,7 @@ names(doc)
 
 ### Perform comprehensive content analysis with CrossRef
 ```{r}
-analysis <- analyze_scientific_content_enhanced(
+analysis <- analyze_scientific_content(
   text = doc,
   doi = "10.1016/j.mlwa.2021.100094",
   mailto = "your@email.com"
@@ -142,7 +142,7 @@ dist %>%
 ## Main Functions
 
 - `pdf2txt_auto()`: Import PDF with automatic section detection
-- `analyze_scientific_content_enhanced()`: Comprehensive content and citation analysis
+- `analyze_scientific_content()`: Comprehensive content and citation analysis
 - `parse_references_section()`: Parse reference list
 - `match_citations_to_references()`: Match citations to references
 - `calculate_word_distribution()`: Track word frequencies across sections

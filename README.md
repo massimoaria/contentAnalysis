@@ -1,11 +1,11 @@
 
-# contentAnalysis
+# contentanalysis
 
 <!-- badges: start -->
 
 <!-- badges: end -->
 
-`contentAnalysis` provides comprehensive tools for extracting and
+`contentanalysis` provides comprehensive tools for extracting and
 analyzing scientific content from PDF documents, including citation
 extraction, reference matching, text analysis, and bibliometric
 indicators.
@@ -31,7 +31,7 @@ You can install the development version from GitHub:
 
 ``` r
 # install.packages("devtools")
-devtools::install_github("yourusername/contentAnalysis")
+devtools::install_github("yourusername/contentanalysis")
 ```
 
 ## Example
@@ -39,13 +39,13 @@ devtools::install_github("yourusername/contentAnalysis")
 Complete workflow analyzing a real scientific paper:
 
 ``` r
-library(contentAnalysis)
+library(contentanalysis)
 ```
 
 ### Download example paper (open access)
 
 ``` r
-paper_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/master/inst/examples/example_paper.pdf"
+paper_url <- "https://raw.githubusercontent.com/massimoaria/contentanalysis/master/inst/examples/example_paper.pdf"
 download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 ```
 
@@ -73,7 +73,7 @@ names(doc)
 ### Perform comprehensive content analysis with CrossRef
 
 ``` r
-analysis <- analyze_scientific_content_enhanced(
+analysis <- analyze_scientific_content(
   text = doc,
   doi = "10.1016/j.mlwa.2021.100094",
   mailto = "your@email.com"
@@ -125,9 +125,9 @@ analysis$summary
 #>   match_confidence             n percentage
 #>   <chr>                    <int>      <dbl>
 #> 1 high                        35       68.6
-#> 2 medium_etal_inconsistent     7       13.7
-#> 3 no_match_author              6       11.8
-#> 4 no_match_missing_info        1        2  
+#> 2 high_numbered                1        2  
+#> 3 medium_etal_inconsistent     7       13.7
+#> 4 no_match_author              6       11.8
 #> 5 no_match_year                2        3.9
 ```
 
@@ -169,25 +169,24 @@ print_matching_diagnostics(analysis)
 #> 2 medium_etal_inconsistent     7
 #> 3 no_match_author              6
 #> 4 no_match_year                2
-#> 5 no_match_missing_info        1
+#> 5 high_numbered                1
 #> 
-#> Match rate: 82.4 %
+#> Match rate: 84.3 %
 #> 
 #> High confidence matches: 35 
 #> 
 #> Citations without matches:
-#> # A tibble: 9 × 4
+#> # A tibble: 8 × 4
 #>   citation_text_clean                     cite_author cite_year match_confidence
 #>   <chr>                                   <chr>       <chr>     <chr>           
 #> 1 https://doi.org/10.1016/j.mlwa.2021.10… https       1016      no_match_year   
 #> 2 (see Breiman, 1996)                     see         1996      no_match_author 
 #> 3 (Ribeiro, Singh, and Guestrin, 2016)    Ribeiro     2016      no_match_author 
-#> 4 [6]                                     <NA>        <NA>      no_match_missin…
-#> 5 (Subsequently, Zhou, Zhou, and Hooker,… Subsequent… 2018      no_match_author 
-#> 6 (see Guidotti et al., 2018)             see         2018      no_match_author 
-#> 7 (Lou, Caruana, and Gehrke, 2012)        Lou         2012      no_match_year   
-#> 8 (Recently, Ribeiro et al., 2016)        Recently    2016      no_match_author 
-#> 9 (Akosa, 2017)                           Akosa       2017      no_match_author
+#> 4 (Subsequently, Zhou, Zhou, and Hooker,… Subsequent… 2018      no_match_author 
+#> 5 (see Guidotti et al., 2018)             see         2018      no_match_author 
+#> 6 (Lou, Caruana, and Gehrke, 2012)        Lou         2012      no_match_year   
+#> 7 (Recently, Ribeiro et al., 2016)        Recently    2016      no_match_author 
+#> 8 (Akosa, 2017)                           Akosa       2017      no_match_author
 ```
 
 ### Analyze citation contexts
@@ -326,8 +325,8 @@ dist %>%
 ## Main Functions
 
 - `pdf2txt_auto()`: Import PDF with automatic section detection
-- `analyze_scientific_content_enhanced()`: Comprehensive content and
-  citation analysis
+- `analyze_scientific_content()`: Comprehensive content and citation
+  analysis
 - `parse_references_section()`: Parse reference list
 - `match_citations_to_references()`: Match citations to references
 - `calculate_word_distribution()`: Track word frequencies across
@@ -345,5 +344,5 @@ Suggested: plotly, RColorBrewer, scales (for visualization)
 
 If you use this package in your research, please cite:
 
-    Massimo Aria (2025). contentAnalysis: Scientific Content and Citation Analysis from PDF Documents.
+    Massimo Aria (2025). contentanalysis: Scientific Content and Citation Analysis from PDF Documents.
     R package version 0.1.0.
