@@ -1,6 +1,14 @@
 ---
 output: github_document
+always_allow_html: true
 ---
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%")
+```
 
 # contentAnalysis
 
@@ -31,72 +39,79 @@ devtools::install_github("yourusername/contentAnalysis")
 ## Example
 
 Complete workflow analyzing a real scientific paper:
-```r
+```{r}
 library(contentAnalysis)
+```
 
-# Download example paper (open access)
+### Download example paper (open access)
+
+```{r}
 paper_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/master/inst/examples/example_paper.pdf"
 download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
+```
 
-# Import PDF with automatic section detection
+### Import PDF with automatic section detection
+```{r}
 doc <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
 
 # Check detected sections
 names(doc)
-#> [1] "Full_text"    "Abstract"     "Introduction" "Methods"      
-#> [5] "Results"      "Discussion"   "Conclusion"   "References"
+```
 
-# Perform comprehensive content analysis with CrossRef
+
+### Perform comprehensive content analysis with CrossRef
+```{r}
 analysis <- analyze_scientific_content_enhanced(
   text = doc,
   doi = "10.1016/j.mlwa.2021.100094",
   mailto = "your@email.com"
 )
+```
 
-# View summary statistics
+### View summary statistics
+```{r}
+
 analysis$summary
-#> $total_words_analyzed
-#> [1] 4523
-#> 
-#> $citations_extracted
-#> [1] 45
-#> 
-#> $references_parsed
-#> [1] 42
+```
 
-# Examine citations by type
+### Examine citations by type
+```{r}
 analysis$citation_metrics$type_distribution
-#>                citation_type  n percentage
-#> 1        author_year_basic   28      62.2
-#> 2        narrative_single   12      26.7
-#> 3   multiple_citations_semicolon    5      11.1
+```
 
-# Check matching quality
+### Check matching quality
+```{r}
 print_matching_diagnostics(analysis)
-#> Total citations: 45 
-#> Total references parsed: 42 
-#> Match rate: 93.3 %
-#> High confidence matches: 40
+```
 
-# Analyze citation contexts
+### Analyze citation contexts
+```{r}
 head(analysis$citation_contexts[, c("citation_text_clean", "section", "full_context")])
+```
 
-# Track methodological terms across sections
+### Track methodological terms across sections
+```{r}
 method_terms <- c("machine learning", "regression", "validation", "dataset")
 word_dist <- calculate_word_distribution(doc, method_terms)
+```
 
-# Create interactive visualization
+### Create interactive visualization
+```{r eval=FALSE, include=FALSE}
 plot_word_distribution(word_dist, plot_type = "line", show_points = TRUE)
+```
 
-# Examine most frequent words
+### Examine most frequent words
+```{r}
 head(analysis$word_frequencies, 10)
+```
 
-# Citation co-occurrence network
+### Citation co-occurrence network
+```{r}
 head(analysis$network_data)
 ```
 
 ### Working with references
-```r
+```{r}
 # View parsed references
 head(analysis$parsed_references[, c("ref_first_author", "ref_year", "ref_full_text")])
 
@@ -107,15 +122,10 @@ analysis$citation_references_mapping %>%
 
 # Citations by section
 analysis$citation_metrics$section_distribution
-#>       section  n percentage
-#> 1 Introduction 15      33.3
-#> 2     Methods  8      17.8
-#> 3     Results 12      26.7
-#> 4  Discussion 10      22.2
 ```
 
 ### Advanced: Word distribution analysis
-```r
+```{r}
 # Track disease-related terms
 disease_terms <- c("covid", "pandemic", "health", "policy", "vaccination")
 dist <- calculate_word_distribution(doc, disease_terms, use_sections = TRUE)
@@ -148,6 +158,6 @@ Suggested: plotly, RColorBrewer, scales (for visualization)
 
 If you use this package in your research, please cite:
 ```
-Your Name (2025). contentAnalysis: Scientific Content and Citation Analysis from PDF Documents.
+Massimo Aria (2025). contentAnalysis: Scientific Content and Citation Analysis from PDF Documents.
 R package version 0.1.0.
 ```
