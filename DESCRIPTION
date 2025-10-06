@@ -1,4 +1,4 @@
-Package: contentAnalysis
+Package: contentanalysis
 Title: Scientific Content and Citation Analysis from PDF Documents
 Version: 0.1.0
 Authors@R: 
@@ -29,5 +29,5 @@ Suggests:
     scales,
     stringdist
 URL: https://github.com/massimoaria/contentAnalysis
-BugReports: https://github.com/massimoaria/contentAnalysis/issues
+BugReports: https://github.com/massimoaria/contentanalysis/issues
 VignetteBuilder: knitr

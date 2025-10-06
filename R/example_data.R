@@ -18,7 +18,7 @@
 get_example_paper <- function(example = "example_paper.pdf") {
 
   # Try to find in package installation
-  pkg_path <- system.file("examples", example, package = "contentAnalysis")
+  pkg_path <- system.file("examples", example, package = "contentanalysis")
 
   if (file.exists(pkg_path)) {
     return(pkg_path)
@@ -29,7 +29,7 @@ get_example_paper <- function(example = "example_paper.pdf") {
 
   if (example == "example_paper.pdf") {
     # GitHub raw URL
-    github_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/master/inst/examples/example_paper.pdf"
+    github_url <- "https://raw.githubusercontent.com/massimoaria/contentanalysis/master/inst/examples/example_paper.pdf"
     temp_path <- file.path(tempdir(), example)
 
     tryCatch({

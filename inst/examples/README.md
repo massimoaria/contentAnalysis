@@ -12,7 +12,7 @@ This folder contains example papers for testing and demonstration.
 
 From GitHub repository (developers):
 ```r
-paper_path <- system.file('examples', 'example_paper.pdf', package = 'contentAnalysis')
+paper_path <- system.file('examples', 'example_paper.pdf', package = 'contentanalysis')
 ```
 
 From installed package (users):

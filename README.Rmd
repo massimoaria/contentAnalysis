@@ -10,12 +10,12 @@ knitr::opts_chunk$set(
   out.width = "100%")
 ```
 
-# contentAnalysis
+# contentanalysis
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-`contentAnalysis` provides comprehensive tools for extracting and analyzing scientific content from PDF documents, including citation extraction, reference matching, text analysis, and bibliometric indicators.
+`contentanalysis` provides comprehensive tools for extracting and analyzing scientific content from PDF documents, including citation extraction, reference matching, text analysis, and bibliometric indicators.
 
 ## Features
 
@@ -33,20 +33,20 @@ knitr::opts_chunk$set(
 You can install the development version from GitHub:
 ```r
 # install.packages("devtools")
-devtools::install_github("yourusername/contentAnalysis")
+devtools::install_github("yourusername/contentanalysis")
 ```
 
 ## Example
 
 Complete workflow analyzing a real scientific paper:
 ```{r}
-library(contentAnalysis)
+library(contentanalysis)
 ```
 
 ### Download example paper (open access)
 
 ```{r}
-paper_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/master/inst/examples/example_paper.pdf"
+paper_url <- "https://raw.githubusercontent.com/massimoaria/contentanalysis/master/inst/examples/example_paper.pdf"
 download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 ```
 
@@ -158,6 +158,6 @@ Suggested: plotly, RColorBrewer, scales (for visualization)
 
 If you use this package in your research, please cite:
 ```
-Massimo Aria (2025). contentAnalysis: Scientific Content and Citation Analysis from PDF Documents.
+Massimo Aria (2025). contentanalysis: Scientific Content and Citation Analysis from PDF Documents.
 R package version 0.1.0.
 ```

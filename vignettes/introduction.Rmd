@@ -1,8 +1,8 @@
 ---
-title: "Introduction to contentAnalysis"
+title: "Introduction to contentanalysis"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Introduction to contentAnalysis}
+  %\VignetteIndexEntry{Introduction to contentanalysis}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
@@ -14,18 +14,18 @@ editor_options:
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE  # Set to TRUE if you want to run the examples
+  eval = TRUE  # Set to TRUE if you want to run the examples
 )
 ```
 
 ```{r setup}
-library(contentAnalysis)
+library(contentanalysis)
 library(dplyr)
 ```
 
 ## Introduction
 
-The `contentAnalysis` package provides comprehensive tools for
+The `contentanalysis` package provides comprehensive tools for
 extracting and analyzing scientific content from PDF documents. This
 vignette demonstrates the main features using a real open-access
 scientific paper.
@@ -38,7 +38,7 @@ We'll use an open-access paper on Machine Learning with Applications:
 
 ```{r download}
 # Download example paper
-paper_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/master/inst/examples/example_paper.pdf"
+paper_url <- "https://raw.githubusercontent.com/massimoaria/contentanalysis/master/inst/examples/example_paper.pdf"
 download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 ```
 
@@ -63,13 +63,13 @@ For papers with specific layouts:
 
 ```{r import-manual}
 # Single column
-doc_single <- pdf2txt_auto("example_paper.pdf", n_columns = 1)
+# doc_single <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
 
 # Three columns
-doc_three <- pdf2txt_auto("example_paper.pdf", n_columns = 3)
+# doc_three <- pdf2txt_auto("example_paper.pdf", n_columns = 3)
 
 # Without section splitting
-text_only <- pdf2txt_auto("example_paper.pdf", sections = FALSE)
+# text_only <- pdf2txt_auto("example_paper.pdf", sections = FALSE)
 ```
 
 ## Comprehensive Content Analysis
@@ -83,7 +83,8 @@ analysis <- analyze_scientific_content_enhanced(
   mailto = "your@email.com",                 # Required for CrossRef
   window_size = 10,                          # Words around citations
   remove_stopwords = TRUE,
-  ngram_range = c(1, 3)
+  ngram_range = c(1, 3),
+  use_sections_for_citations = TRUE
 )
 ```
 
@@ -185,10 +186,6 @@ head(refs)
 ```{r word-freq}
 # Top 20 most frequent words
 head(analysis$word_frequencies, 20)
-
-# Words related to specific topic
-covid_words <- analysis$word_frequencies %>%
-  filter(grepl("covid|pandemic|health", word, ignore.case = TRUE))
 ```
 
 ### N-gram Analysis
@@ -207,13 +204,13 @@ Track how specific terms are distributed across the document:
 
 ```{r word-dist}
 # Terms of interest
-terms <- c("health", "policy", "covid", "vaccination", "pandemic")
+terms <- c("random forest", "machine learning", "accuracy", "tree")
 
 # Calculate distribution
 dist <- calculate_word_distribution(
   text = doc,
   selected_words = terms,
-  use_sections = "auto"
+  use_sections = TRUE
 )
 
 # View results
@@ -227,16 +224,16 @@ dist %>%
 ```{r plot, fig.width=8, fig.height=5}
 # Interactive plot
 plot_word_distribution(
-  dist, 
+  dist,
   plot_type = "line",
-  show_points = TRUE
+  show_points = TRUE,
+  smooth = TRUE
 )
 
 # Area plot
 plot_word_distribution(
-  dist, 
-  plot_type = "area",
-  smooth = FALSE
+  dist,
+  plot_type = "area"
 )
 ```
 
@@ -247,11 +244,11 @@ plot_word_distribution(
 ```{r find-citations}
 # Citations to specific author
 analysis$citation_references_mapping %>%
-  filter(grepl("Smith", ref_authors, ignore.case = TRUE))
+  filter(grepl("Breiman", ref_authors, ignore.case = TRUE))
 
 # Citations in Discussion section
 analysis$citations %>%
-  filter(section == "Discussion") %>%
+  filter(section == "Introduction") %>%
   select(citation_text, citation_type)
 ```
 
@@ -283,7 +280,7 @@ analysis_custom <- analyze_scientific_content_enhanced(
 
 For documents without clear sections:
 
-```{r segments}
+```{r segments, fig.height=5, fig.width=8}
 # Divide into 20 equal segments
 dist_segments <- calculate_word_distribution(
   text = doc,
@@ -292,7 +289,7 @@ dist_segments <- calculate_word_distribution(
   n_segments = 20
 )
 
-plot_word_distribution(dist_segments)
+plot_word_distribution(dist_segments, smooth=TRUE)
 ```
 
 ## Export Results
@@ -336,7 +333,7 @@ names(citation_counts) <- papers
 
 ## Conclusion
 
-The `contentAnalysis` package provides a complete toolkit for analyzing
+The `contentanalysis` package provides a complete toolkit for analyzing
 scientific papers:
 
 1.  **Import**: Handle multi-column PDFs with structure preservation
