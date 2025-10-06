@@ -42,7 +42,7 @@ Complete workflow analyzing a real scientific paper:
 library(contentAnalysis)
 
 # Download example paper (open access)
-paper_url <- "https://www.sciencedirect.com/science/article/pii/S266682702200113X/pdfft?md5=e53e548eac3ea9820225f39df8fc10da&pid=1-s2.0-S266682702200113X-main.pdf"
+paper_url <- "https://raw.githubusercontent.com/massimoaria/contentAnalysis/master/inst/examples/example_paper.pdf"
 download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 
 # Import PDF with automatic section detection
@@ -56,7 +56,7 @@ names(doc)
 # Perform comprehensive content analysis with CrossRef
 analysis <- analyze_scientific_content_enhanced(
   text = doc,
-  doi = "10.1016/j.healthpol.2022.05.004",
+  doi = "10.1016/j.mlwa.2021.100094",
   mailto = "your@email.com"
 )
 
