@@ -15,5 +15,5 @@ utils::globalVariables(c(
   "cite_year", "cite_has_etal", "authors_section", "ref_second_author",
   "segment_id", "segment_name", "segment_type", "ngram_size",
   "total_words", "relative_frequency", "segment_name.x", "segment_name.y",
-  "n", "."
+  "n", ".", "ref_source", "ref_first_author_surname"
 ))

@@ -17,6 +17,7 @@ Imports:
     httr2,
     magrittr,
     pdftools,
+    purrr,
     stringr,
     tibble,
     tidyr,
