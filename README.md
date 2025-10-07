@@ -118,17 +118,32 @@ analysis$summary
 #> [1] 33
 #> 
 #> $citations_matched_to_refs
-#> [1] 35
+#> [1] 42
 #> 
 #> $match_quality
 #> # A tibble: 5 × 3
-#>   match_confidence             n percentage
-#>   <chr>                    <int>      <dbl>
-#> 1 high                        35       68.6
-#> 2 high_numbered                1        2  
-#> 3 medium_etal_inconsistent     7       13.7
-#> 4 no_match_author              6       11.8
-#> 5 no_match_year                2        3.9
+#>   match_confidence            n percentage
+#>   <chr>                   <int>      <dbl>
+#> 1 high                       41       80.4
+#> 2 high_numbered               1        2  
+#> 3 medium_multiple_matches     1        2  
+#> 4 no_match_author             6       11.8
+#> 5 no_match_year               2        3.9
+```
+
+### Readability indices
+
+``` r
+readability <- calculate_readability_indices(doc$Full_text, detailed = TRUE)
+readability
+#> # A tibble: 1 × 12
+#>   flesch_kincaid_grade flesch_reading_ease automated_readability_index
+#>                  <dbl>               <dbl>                       <dbl>
+#> 1                 12.4                33.9                        11.8
+#> # ℹ 9 more variables: gunning_fog_index <dbl>, n_sentences <int>,
+#> #   n_words <int>, n_syllables <dbl>, n_characters <int>,
+#> #   n_complex_words <int>, avg_sentence_length <dbl>,
+#> #   avg_syllables_per_word <dbl>, pct_complex_words <dbl>
 ```
 
 ### Examine citations by type
@@ -163,17 +178,17 @@ print_matching_diagnostics(analysis)
 #> 
 #> Match quality distribution:
 #> # A tibble: 5 × 2
-#>   match_confidence             n
-#>   <chr>                    <int>
-#> 1 high                        35
-#> 2 medium_etal_inconsistent     7
-#> 3 no_match_author              6
-#> 4 no_match_year                2
-#> 5 high_numbered                1
+#>   match_confidence            n
+#>   <chr>                   <int>
+#> 1 high                       41
+#> 2 no_match_author             6
+#> 3 no_match_year               2
+#> 4 high_numbered               1
+#> 5 medium_multiple_matches     1
 #> 
 #> Match rate: 84.3 %
 #> 
-#> High confidence matches: 35 
+#> High confidence matches: 41 
 #> 
 #> Citations without matches:
 #> # A tibble: 8 × 4
@@ -329,6 +344,7 @@ dist %>%
   analysis
 - `parse_references_section()`: Parse reference list
 - `match_citations_to_references()`: Match citations to references
+- `calculate_readability_indices()`: Compute readability scores
 - `calculate_word_distribution()`: Track word frequencies across
   sections
 - `plot_word_distribution()`: Interactive visualization of word

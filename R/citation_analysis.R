@@ -187,6 +187,7 @@ analyze_scientific_content <- function(text,
     }
   } else {
     clean_text <- text
+    sections_to_use <- NULL  # <-- AGGIUNGERE QUESTA RIGA
   }
 
   clean_text <- clean_text %>%
@@ -223,7 +224,14 @@ analyze_scientific_content <- function(text,
     doi_pattern = "https?://doi\\.org/[\\w\\./\\-]+"
   )
 
-  all_citations <- tibble::tibble()
+  # Inizializza con struttura completa
+  all_citations <- tibble::tibble(
+    citation_type = character(0),
+    citation_text = character(0),
+    start_pos = integer(0),
+    end_pos = integer(0),
+    citation_id = character(0)
+  )
 
   for (pattern_name in names(citation_patterns)) {
     pattern <- citation_patterns[[pattern_name]]
@@ -437,7 +445,7 @@ analyze_scientific_content <- function(text,
       dplyr::count(citation_type, sort = TRUE) %>%
       dplyr::mutate(percentage = round(n / sum(n) * 100, 2))
 
-    if (!is.null(sections_to_use)){
+    if (!is.null(sections_to_use) && length(sections_to_use) > 0) {
       citation_metrics$section_distribution <- all_citations %>%
         dplyr::mutate(section = factor(section, levels = sections_to_use)) %>%
         dplyr::count(section, sort = FALSE, .drop = FALSE) %>%

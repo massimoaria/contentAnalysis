@@ -74,6 +74,13 @@ analysis <- analyze_scientific_content(
 analysis$summary
 ```
 
+
+### Readability indices
+```{r}
+readability <- calculate_readability_indices(doc$Full_text, detailed = TRUE)
+readability
+```
+
 ### Examine citations by type
 ```{r}
 analysis$citation_metrics$type_distribution
@@ -145,6 +152,7 @@ dist %>%
 - `analyze_scientific_content()`: Comprehensive content and citation analysis
 - `parse_references_section()`: Parse reference list
 - `match_citations_to_references()`: Match citations to references
+- `calculate_readability_indices()`: Compute readability scores
 - `calculate_word_distribution()`: Track word frequencies across sections
 - `plot_word_distribution()`: Interactive visualization of word distribution
 

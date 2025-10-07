@@ -27,7 +27,10 @@ Suggests:
     RColorBrewer,
     rmarkdown,
     scales,
-    stringdist
+    stringdist,
+    testthat (>= 3.0.0),
+    mockery
 URL: https://github.com/massimoaria/contentAnalysis
 BugReports: https://github.com/massimoaria/contentanalysis/issues
 VignetteBuilder: knitr
+Config/testthat/edition: 3
