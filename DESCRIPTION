@@ -1,6 +1,6 @@
 Package: contentanalysis
 Title: Scientific Content and Citation Analysis from PDF Documents
-Version: 0.1.0
+Version: 0.0.9
 Authors@R: 
     person("Massimo", "Aria", , "aria@unina.it", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-8517-9411"))
