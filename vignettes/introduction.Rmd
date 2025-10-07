@@ -98,7 +98,8 @@ names(analysis)
 #> [3] "citation_contexts"           "citation_metrics"           
 #> [5] "citation_references_mapping" "parsed_references"          
 #> [7] "word_frequencies"            "ngrams"                     
-#> [9] "network_data"                "summary"
+#> [9] "network_data"                "section_colors"
+#> [11] "summary"
 ```
 
 ### Summary Statistics
@@ -144,6 +145,134 @@ intro_citations <- analysis$citation_contexts %>%
   filter(section == "Introduction")
 
 nrow(intro_citations)
+```
+
+## Citation Network Visualization
+
+The package can create interactive network visualizations showing how citations
+co-occur within your document. Citations that appear close together are 
+connected, with the visualization providing insights into citation patterns
+and relationships.
+
+### Creating the Network
+
+```{r network-create, fig.width=8, fig.height=5}
+# Create interactive citation network
+network <- create_citation_network(
+  citation_analysis_results = analysis,
+  max_distance = 800,          # Maximum distance in characters
+  min_connections = 2,          # Minimum connections to include a node
+  show_labels = TRUE            # Show citation labels
+)
+
+# Display the network
+network
+```
+
+### Understanding Network Features
+
+The network visualization includes several visual elements:
+
+- **Node size**: Larger nodes have more connections
+- **Node color**: Indicates the primary section where the citation appears
+- **Node border**: Thicker borders (3px) indicate citations appearing in multiple sections
+- **Edge thickness**: Thicker edges connect citations that appear closer together
+- **Edge color**: 
+  - Red: Very close citations (≤300 characters)
+  - Blue: Moderate distance (≤600 characters)  
+  - Gray: Distant citations (>600 characters)
+
+### Network Statistics
+
+Access detailed statistics about the network:
+
+```{r network-stats}
+# Get network statistics
+stats <- attr(network, "stats")
+
+# Network size
+cat("Number of nodes:", stats$n_nodes, "\n")
+cat("Number of edges:", stats$n_edges, "\n")
+cat("Average distance:", stats$avg_distance, "characters\n")
+cat("Maximum distance:", stats$max_distance, "characters\n")
+
+# Distribution by section
+print(stats$section_distribution)
+
+# Citations appearing in multiple sections
+if (nrow(stats$multi_section_citations) > 0) {
+  cat("\nCitations appearing in multiple sections:\n")
+  print(stats$multi_section_citations)
+}
+
+# Color mapping
+cat("\nSection colors:\n")
+print(stats$section_colors)
+```
+
+### Customizing the Network
+
+You can customize the network based on your analysis needs:
+
+```{r network-custom}
+# Focus on very close citations only
+network_close <- create_citation_network(
+  analysis,
+  max_distance = 300,
+  min_connections = 1
+)
+
+# Show only highly connected "hub" citations
+network_hubs <- create_citation_network(
+  analysis,
+  max_distance = 1000,
+  min_connections = 5,
+  show_labels = TRUE
+)
+
+# Clean visualization without labels
+network_clean <- create_citation_network(
+  analysis,
+  max_distance = 800,
+  min_connections = 2,
+  show_labels = FALSE
+)
+```
+
+### Interpreting the Network
+
+The citation network can reveal:
+
+1. **Citation clusters**: Groups of related citations that frequently appear together
+2. **Hub citations**: Highly connected citations that appear throughout the document
+3. **Section patterns**: How citations are distributed across different sections
+4. **Co-citation patterns**: Which references are cited together
+
+```{r network-analysis}
+# Find hub citations (most connected)
+hub_threshold <- quantile(stats$section_distribution$n, 0.75)
+cat("Hub citations (top 25%):\n")
+print(stats$section_distribution %>% filter(n >= hub_threshold))
+
+# Analyze network density
+network_density <- stats$n_edges / (stats$n_nodes * (stats$n_nodes - 1) / 2)
+cat("\nNetwork density:", round(network_density, 3), "\n")
+```
+
+### Citation Co-occurrence Data
+
+You can also access the raw co-occurrence data:
+
+```{r network-data}
+# View raw co-occurrence data
+network_data <- analysis$network_data
+head(network_data)
+
+# Citations appearing very close together
+close_citations <- network_data %>%
+  filter(distance < 100)  # Within 100 characters
+
+cat("Number of very close citation pairs:", nrow(close_citations), "\n")
 ```
 
 ## Reference Matching
@@ -196,6 +325,32 @@ head(analysis$ngrams$`2gram`)
 
 # Trigrams
 head(analysis$ngrams$`3gram`)
+```
+
+### Readability Metrics
+
+Calculate readability indices for the document:
+
+```{r readability}
+# Calculate readability for the full text
+readability <- calculate_readability_indices(
+  doc$Full_text,
+  detailed = TRUE
+)
+
+print(readability)
+
+# Compare readability across sections
+sections_to_analyze <- c("Abstract", "Introduction", "Methods", "Discussion")
+readability_by_section <- lapply(sections_to_analyze, function(section) {
+  if (section %in% names(doc)) {
+    calculate_readability_indices(doc[[section]], detailed = FALSE)
+  }
+})
+names(readability_by_section) <- sections_to_analyze
+
+# View results
+do.call(rbind, readability_by_section)
 ```
 
 ## Word Distribution Analysis
@@ -252,18 +407,6 @@ analysis$citations %>%
   select(citation_text, citation_type)
 ```
 
-### Citation Co-occurrence Network
-
-```{r network}
-# View co-occurring citations
-network <- analysis$network_data
-head(network)
-
-# Citations appearing close together
-close_citations <- network %>%
-  filter(distance < 100)  # Within 100 characters
-```
-
 ### Custom Stopwords
 
 ```{r custom-stop}
@@ -307,6 +450,17 @@ write.csv(analysis$citation_references_mapping,
 # Export word frequencies
 write.csv(analysis$word_frequencies, 
           "word_frequencies.csv", row.names = FALSE)
+
+# Export network statistics
+if (!is.null(network)) {
+  stats <- attr(network, "stats")
+  write.csv(stats$section_distribution, 
+            "network_section_distribution.csv", row.names = FALSE)
+  if (nrow(stats$multi_section_citations) > 0) {
+    write.csv(stats$multi_section_citations,
+              "network_multi_section_citations.csv", row.names = FALSE)
+  }
+}
 ```
 
 ## Workflow for Multiple Papers
@@ -317,6 +471,8 @@ papers <- c("paper1.pdf", "paper2.pdf", "paper3.pdf")
 dois <- c("10.xxxx/1", "10.xxxx/2", "10.xxxx/3")
 
 results <- list()
+networks <- list()
+
 for (i in seq_along(papers)) {
   doc <- pdf2txt_auto(papers[i], n_columns = 2)
   results[[i]] <- analyze_scientific_content(
@@ -324,11 +480,28 @@ for (i in seq_along(papers)) {
     doi = dois[i],
     mailto = "your@email.com"
   )
+  
+  # Create network for each paper
+  networks[[i]] <- create_citation_network(
+    results[[i]],
+    max_distance = 800,
+    min_connections = 2
+  )
 }
 
 # Combine citation counts
 citation_counts <- sapply(results, function(x) x$summary$citations_extracted)
 names(citation_counts) <- papers
+
+# Compare network statistics
+network_stats <- lapply(networks, function(net) {
+  stats <- attr(net, "stats")
+  c(nodes = stats$n_nodes, 
+    edges = stats$n_edges,
+    avg_distance = stats$avg_distance)
+})
+
+do.call(rbind, network_stats)
 ```
 
 ## Conclusion
@@ -339,8 +512,13 @@ scientific papers:
 1.  **Import**: Handle multi-column PDFs with structure preservation
 2.  **Extract**: Detect citations in multiple formats
 3.  **Match**: Link citations to references automatically
-4.  **Analyze**: Word frequencies, n-grams, citation contexts
-5.  **Visualize**: Interactive plots of word distributions
+4.  **Analyze**: Word frequencies, n-grams, citation contexts, readability
+5.  **Visualize**: Interactive plots of word distributions and citation networks
+6.  **Network**: Explore citation co-occurrence patterns
 
 For more information, see the function documentation:
-`?analyze_scientific_content`
+
+- `?analyze_scientific_content`
+- `?create_citation_network`
+- `?calculate_readability_indices`
+- `?calculate_word_distribution`

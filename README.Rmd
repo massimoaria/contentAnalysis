@@ -15,7 +15,7 @@ knitr::opts_chunk$set(
 <!-- badges: start -->
 <!-- badges: end -->
 
-`contentanalysis` provides comprehensive tools for extracting and analyzing scientific content from PDF documents, including citation extraction, reference matching, text analysis, and bibliometric indicators.
+`contentanalysis` provides comprehensive tools for extracting and analyzing scientific content from PDF documents, including citation extraction, reference matching, text analysis, network visualization, and bibliometric indicators.
 
 ## Features
 
@@ -23,9 +23,10 @@ knitr::opts_chunk$set(
 - **Citation Extraction**: Comprehensive detection of citation formats (numbered, author-year, narrative, parenthetical)
 - **Reference Parsing**: Extract references from text or CrossRef API
 - **Citation-Reference Matching**: Automatic matching with multiple disambiguation strategies
-- **Text Analysis**: Word frequencies, n-grams, lexical diversity
+- **Citation Network**: Interactive network visualization of citation co-occurrences
+- **Text Analysis**: Word frequencies, n-grams, lexical diversity, readability metrics
 - **Citation Context**: Extract surrounding text for each citation
-- **Bibliometric Indicators**: Citation density, distribution by section, co-occurrence networks
+- **Bibliometric Indicators**: Citation density, distribution by section, co-occurrence analysis
 - **Word Distribution**: Track word frequencies across document sections
 
 ## Installation
@@ -33,7 +34,7 @@ knitr::opts_chunk$set(
 You can install the development version from GitHub:
 ```r
 # install.packages("devtools")
-devtools::install_github("yourusername/contentanalysis")
+devtools::install_github("masismo/contentanalysis")
 ```
 
 ## Example
@@ -96,6 +97,81 @@ print_matching_diagnostics(analysis)
 head(analysis$citation_contexts[, c("citation_text_clean", "section", "full_context")])
 ```
 
+## Citation Network Visualization
+
+Create interactive network visualizations showing how citations co-occur within your document:
+
+```{r}
+# Create citation network
+network <- create_citation_network(
+  citation_analysis_results = analysis,
+  max_distance = 800,          # Max distance between citations (characters)
+  min_connections = 2,          # Minimum connections to include a node
+  show_labels = TRUE
+)
+
+# Display interactive network
+network
+```
+
+### Access network statistics
+```{r}
+stats <- attr(network, "stats")
+
+# Network size
+cat("Nodes:", stats$n_nodes, "\n")
+cat("Edges:", stats$n_edges, "\n")
+cat("Average distance:", stats$avg_distance, "characters\n")
+
+# Citations by section
+print(stats$section_distribution)
+
+# Multi-section citations
+if (nrow(stats$multi_section_citations) > 0) {
+  print(stats$multi_section_citations)
+}
+```
+
+### Network Features
+
+The citation network visualization includes:
+
+- **Node size**: Proportional to number of connections
+- **Node color**: Indicates the primary section where citations appear
+- **Node border**: Thicker border (3px) for citations appearing in multiple sections
+- **Edge thickness**: Decreases with distance (closer citations = thicker edges)
+- **Edge color**: 
+  - Red: Very close citations (≤300 characters)
+  - Blue: Moderate distance (≤600 characters)
+  - Gray: Distant citations (>600 characters)
+- **Interactive features**: Zoom, pan, drag nodes, highlight neighbors on hover
+
+### Customizing the Network
+
+```{r}
+# Focus on very close citations only
+network_close <- create_citation_network(
+  analysis,
+  max_distance = 300,
+  min_connections = 1
+)
+
+# Show only highly connected citations
+network_hubs <- create_citation_network(
+  analysis,
+  max_distance = 1000,
+  min_connections = 5
+)
+
+# Hide labels for cleaner visualization
+network_clean <- create_citation_network(
+  analysis,
+  show_labels = FALSE
+)
+```
+
+## Text Analysis
+
 ### Track methodological terms across sections
 ```{r}
 method_terms <- c("machine learning", "regression", "validation", "dataset")
@@ -112,12 +188,12 @@ plot_word_distribution(word_dist, plot_type = "line", show_points = TRUE)
 head(analysis$word_frequencies, 10)
 ```
 
-### Citation co-occurrence network
+### Citation co-occurrence data
 ```{r}
 head(analysis$network_data)
 ```
 
-### Working with references
+## Working with references
 ```{r}
 # View parsed references
 head(analysis$parsed_references[, c("ref_first_author", "ref_year", "ref_full_text")])
@@ -131,7 +207,7 @@ analysis$citation_references_mapping %>%
 analysis$citation_metrics$section_distribution
 ```
 
-### Advanced: Word distribution analysis
+## Advanced: Word distribution analysis
 ```{r}
 # Track disease-related terms
 disease_terms <- c("covid", "pandemic", "health", "policy", "vaccination")
@@ -148,19 +224,35 @@ dist %>%
 
 ## Main Functions
 
+### PDF Import
 - `pdf2txt_auto()`: Import PDF with automatic section detection
+- `reconstruct_text_structured()`: Advanced text reconstruction
+
+### Content Analysis
 - `analyze_scientific_content()`: Comprehensive content and citation analysis
 - `parse_references_section()`: Parse reference list
 - `match_citations_to_references()`: Match citations to references
+
+### Network Analysis
+- `create_citation_network()`: Create interactive citation co-occurrence network
+
+### Text Analysis
 - `calculate_readability_indices()`: Compute readability scores
 - `calculate_word_distribution()`: Track word frequencies across sections
+- `readability_multiple()`: Batch readability analysis
+
+### Visualization
 - `plot_word_distribution()`: Interactive visualization of word distribution
+
+### Utilities
+- `get_example_paper()`: Download example paper for testing
+- `extract_doi_from_pdf()`: Extract DOI from PDF metadata
 
 ## Dependencies
 
-Core: pdftools, dplyr, tidyr, stringr, tidytext, tibble, httr2
+**Core**: pdftools, dplyr, tidyr, stringr, tidytext, tibble, httr2, visNetwork
 
-Suggested: plotly, RColorBrewer, scales (for visualization)
+**Suggested**: plotly, RColorBrewer, scales (for visualization)
 
 ## Citation
 
@@ -168,4 +260,15 @@ If you use this package in your research, please cite:
 ```
 Massimo Aria (2025). contentanalysis: Scientific Content and Citation Analysis from PDF Documents.
 R package version 0.1.0.
+https://github.com/massimoaria/contentanalysis
 ```
+
+## License
+
+GPL (>= 3)
+
+## Issues and Contributions
+
+Please report issues at: https://github.com/massimoaria/contentanalysis/issues
+
+Contributions are welcome! Please feel free to submit a Pull Request.

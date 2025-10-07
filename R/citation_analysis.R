@@ -679,6 +679,17 @@ analyze_scientific_content <- function(text,
   results$ngrams <- ngrams_results
   results$network_data <- citation_cooccurrence
 
+  # Handle section colors safely - check if citation_contexts has data and section column
+  if (nrow(citation_contexts) > 0 && "section" %in% names(citation_contexts)) {
+    section_values <- unique(citation_contexts$section)
+    section_colors <- colorlist()[1:length(section_values)]
+    names(section_colors) <- section_values
+  } else {
+    # Fallback when there are no citations or sections
+    section_colors <- c("Full_text" = colorlist()[1])
+  }
+  results$section_colors <- section_colors
+
   results$summary <- list(
     total_words_analyzed = nrow(tokens),
     unique_words = nrow(word_frequencies),
@@ -758,4 +769,13 @@ print_matching_diagnostics <- function(results) {
   }
 
   invisible(match_summary)
+}
+
+# color palette
+colorlist <- function() {
+  c(
+    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#F781BF", "#999999", "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F",
+    "#B3B3B3", "#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "#B15928", "#8DD3C7", "#BEBADA",
+    "#FB8072", "#80B1D3", "#FDB462", "#B3DE69", "#D9D9D9", "#BC80BD", "#CCEBC5"
+  )
 }
