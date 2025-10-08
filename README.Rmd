@@ -90,11 +90,6 @@ readability
 analysis$citation_metrics$type_distribution
 ```
 
-### Check matching quality
-```{r}
-print_matching_diagnostics(analysis)
-```
-
 ### Analyze citation contexts
 ```{r}
 head(analysis$citation_contexts[, c("citation_text_clean", "section", "full_context")])

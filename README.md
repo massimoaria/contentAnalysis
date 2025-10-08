@@ -55,7 +55,9 @@ download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 ### Import PDF with automatic section detection
 
 ``` r
-doc <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
+doc <- pdf2txt_auto("example_paper.pdf", 
+                    n_columns = 2,
+                    citation_type = "author_year")
 #> Using 17 sections from PDF table of contents
 #> Found 16 sections: Preface, Introduction, Related work, Internal processing approaches, Random forest extra information, Visualization toolkits, Post-Hoc approaches, Size reduction, Rule extraction, Local explanation, Comparison study, Experimental design, Analysis, Conclusion, Acknowledgment, References
 #> Normalized 77 references with consistent \n\n separators
@@ -79,8 +81,10 @@ names(doc)
 analysis <- analyze_scientific_content(
   text = doc,
   doi = "10.1016/j.mlwa.2021.100094",
-  mailto = "your@email.com"
+  mailto = "your@email.com",
+  citation_type = "author_year"
 )
+#> Extracting author-year citations only
 #> Attempting to retrieve references from CrossRef...
 #> Successfully retrieved 33 references from CrossRef
 ```
@@ -97,13 +101,13 @@ analysis$summary
 #> [1] 1429
 #> 
 #> $citations_extracted
-#> [1] 51
+#> [1] 50
 #> 
 #> $narrative_citations
 #> [1] 15
 #> 
 #> $parenthetical_citations
-#> [1] 36
+#> [1] 35
 #> 
 #> $complex_citations_parsed
 #> [1] 12
@@ -112,10 +116,10 @@ analysis$summary
 #> [1] 0.3669748
 #> 
 #> $average_citation_context_length
-#> [1] 3198.725
+#> [1] 3221
 #> 
 #> $citation_density_per_1000_words
-#> [1] 6.08
+#> [1] 5.96
 #> 
 #> $references_parsed
 #> [1] 33
@@ -124,14 +128,16 @@ analysis$summary
 #> [1] 42
 #> 
 #> $match_quality
-#> # A tibble: 5 × 3
+#> # A tibble: 4 × 3
 #>   match_confidence            n percentage
 #>   <chr>                   <int>      <dbl>
-#> 1 high                       41       80.4
-#> 2 high_numbered               1        2  
-#> 3 medium_multiple_matches     1        2  
-#> 4 no_match_author             6       11.8
-#> 5 no_match_year               2        3.9
+#> 1 high                       41         82
+#> 2 medium_multiple_matches     1          2
+#> 3 no_match_author             6         12
+#> 4 no_match_year               2          4
+#> 
+#> $citation_type_used
+#> [1] "author_year"
 ```
 
 ### Readability indices
@@ -153,58 +159,19 @@ readability
 
 ``` r
 analysis$citation_metrics$type_distribution
-#> # A tibble: 11 × 3
+#> # A tibble: 10 × 3
 #>    citation_type                   n percentage
 #>    <chr>                       <int>      <dbl>
-#>  1 parsed_from_multiple           12      23.5 
-#>  2 author_year_basic               9      17.6 
-#>  3 author_year_and                 8      15.7 
-#>  4 narrative_etal                  7      13.7 
-#>  5 author_year_etal                3       5.88
-#>  6 narrative_three_authors_and     3       5.88
-#>  7 narrative_two_authors_and       3       5.88
-#>  8 narrative_four_authors_and      2       3.92
-#>  9 see_citations                   2       3.92
-#> 10 doi_pattern                     1       1.96
-#> 11 numbered_simple                 1       1.96
-```
-
-### Check matching quality
-
-``` r
-print_matching_diagnostics(analysis)
-#> 
-#> === CITATION-REFERENCE MATCHING DIAGNOSTICS ===
-#> 
-#> Total citations: 51 
-#> Total references parsed: 33 
-#> 
-#> Match quality distribution:
-#> # A tibble: 5 × 2
-#>   match_confidence            n
-#>   <chr>                   <int>
-#> 1 high                       41
-#> 2 no_match_author             6
-#> 3 no_match_year               2
-#> 4 high_numbered               1
-#> 5 medium_multiple_matches     1
-#> 
-#> Match rate: 84.3 %
-#> 
-#> High confidence matches: 41 
-#> 
-#> Citations without matches:
-#> # A tibble: 8 × 4
-#>   citation_text_clean                     cite_author cite_year match_confidence
-#>   <chr>                                   <chr>       <chr>     <chr>           
-#> 1 https://doi.org/10.1016/j.mlwa.2021.10… https       1016      no_match_year   
-#> 2 (see Breiman, 1996)                     see         1996      no_match_author 
-#> 3 (Ribeiro, Singh, and Guestrin, 2016)    Ribeiro     2016      no_match_author 
-#> 4 (Subsequently, Zhou, Zhou, and Hooker,… Subsequent… 2018      no_match_author 
-#> 5 (see Guidotti et al., 2018)             see         2018      no_match_author 
-#> 6 (Lou, Caruana, and Gehrke, 2012)        Lou         2012      no_match_year   
-#> 7 (Recently, Ribeiro et al., 2016)        Recently    2016      no_match_author 
-#> 8 (Akosa, 2017)                           Akosa       2017      no_match_author
+#>  1 parsed_from_multiple           12         24
+#>  2 author_year_basic               9         18
+#>  3 author_year_and                 8         16
+#>  4 narrative_etal                  7         14
+#>  5 author_year_etal                3          6
+#>  6 narrative_three_authors_and     3          6
+#>  7 narrative_two_authors_and       3          6
+#>  8 narrative_four_authors_and      2          4
+#>  9 see_citations                   2          4
+#> 10 doi_pattern                     1          2
 ```
 
 ### Analyze citation contexts
@@ -240,8 +207,8 @@ network <- create_citation_network(
 network
 ```
 
-<div class="visNetwork html-widget html-fill-item" id="htmlwidget-3e16391232030925367d" style="width:100%;height:480px;"></div>
-<script type="application/json" data-for="htmlwidget-3e16391232030925367d">{"x":{"nodes":{"id":[2,3,4,5,7,8,9,10,11,12,13,14,15,16,18,19,20,21,22,23,24,25,26,27,29,31,32,34,36,37],"citation_text":["(Breiman, Friedman, Olshen, & Stone, 1984)","(Breiman, 2001)","(see Breiman, 1996)","(Hastie, Tibshirani, & Friedman, 2009)","(Adadi & Berrada, 2018)","(Došilović, Brčić, & Hlupić, 2018)","(Du, Liu, & Hu, 2019)","(Guidotti et al., 2018)","(Haddouchi & Berrado, 2019)","(Breiman, un2001)","(Genuer, Poggi, & Tuleau-Malot, 2010)","(Louppe, Wehenkel, Sutera, & Geurts, 2013)","(Friedman, 2001)","(Liaw, Wiener, et al., 2002)","(Tan, Hooker, & Wells, 2016)","(Chipman, George, and McCulloh, 1998)","(Gibbons et al., 2013)","(Subsequently, Zhou, Zhou, and Hooker, 2018)","(see Guidotti et al., 2018)","(Lou, Caruana, and Gehrke, 2012)","(Meinshausen, 2010)","(Akosa, 2017)","(García, Mollineda, & Sánchez, 2009)","(Liaw et al., 2002)","(Hastie et al., 2009)","(Lipton, 2018)","(Ehrlinger, 2016)","(Zhou et al., 2018)","(Deng, 2019)","(Sokolova, Japkowicz, Szpakowicz, 2006)"],"label":["(Breiman, Friedman, Ol...","(Breiman, 2001)","(see Breiman, 1996)","(Hastie, Tibshirani, &...","(Adadi & Berrada, 2018)","(Došilović, Brčić, & H...","(Du, Liu, & Hu, 2019)","(Guidotti et al., 2018)","(Haddouchi & Berrado, ...","(Breiman, un2001)","(Genuer, Poggi, & Tule...","(Louppe, Wehenkel, Sut...","(Friedman, 2001)","(Liaw, Wiener, et al.,...","(Tan, Hooker, & Wells,...","(Chipman, George, and ...","(Gibbons et al., 2013)","(Subsequently, Zhou, Z...","(see Guidotti et al., ...","(Lou, Caruana, and Geh...","(Meinshausen, 2010)","(Akosa, 2017)","(García, Mollineda, & ...","(Liaw et al., 2002)","(Hastie et al., 2009)","(Lipton, 2018)","(Ehrlinger, 2016)","(Zhou et al., 2018)","(Deng, 2019)","(Sokolova, Japkowicz, ..."],"sections":["Introduction","Introduction","Introduction","Introduction","Related work","Related work","Related work","Related work","Related work, Visualization toolkits, Local explanation","Random forest extra information","Random forest extra information","Random forest extra information","Random forest extra information","Visualization toolkits","Visualization toolkits","Size reduction","Size reduction","Size reduction","Local explanation","Local explanation","Rule extraction, Experimental design, Analysis","Experimental design","Experimental design","Analysis","Introduction","Related work","Visualization toolkits","Size reduction","Rule extraction, Experimental design, Analysis","Experimental design"],"n_sections":[1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,3,1],"primary_section":["Introduction","Introduction","Introduction","Introduction","Related work","Related work","Related work","Related work","Related work","Random forest extra information","Random forest extra information","Random forest extra information","Random forest extra information","Visualization toolkits","Visualization toolkits","Size reduction","Size reduction","Size reduction","Local explanation","Local explanation","Rule extraction","Experimental design","Experimental design","Analysis","Introduction","Related work","Visualization toolkits","Size reduction","Rule extraction","Experimental design"],"connections":[2,2,3,3,5,5,5,5,8,4,4,4,8,2,2,2,5,3,2,2,3,2,2,2,2,5,2,2,3,2],"size":[10.5,10.5,12,12,15,15,15,15,19.5,13.5,13.5,13.5,19.5,10.5,10.5,10.5,15,12,10.5,10.5,12,10.5,10.5,10.5,10.5,15,10.5,10.5,12,10.5],"group":["Introduction","Introduction","Introduction","Introduction","Related work","Related work","Related work","Related work","Related work","Random forest extra information","Random forest extra information","Random forest extra information","Random forest extra information","Visualization toolkits","Visualization toolkits","Size reduction","Size reduction","Size reduction","Local explanation","Local explanation","Rule extraction","Experimental design","Experimental design","Analysis","Introduction","Related work","Visualization toolkits","Size reduction","Rule extraction","Experimental design"],"color":["rgba(228, 26, 28, 0.85)","rgba(228, 26, 28, 0.85)","rgba(228, 26, 28, 0.85)","rgba(228, 26, 28, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(77, 175, 74, 0.85)","rgba(77, 175, 74, 0.85)","rgba(77, 175, 74, 0.85)","rgba(77, 175, 74, 0.85)","rgba(152, 78, 163, 0.85)","rgba(152, 78, 163, 0.85)","rgba(255, 127, 0, 0.85)","rgba(255, 127, 0, 0.85)","rgba(255, 127, 0, 0.85)","rgba(247, 129, 191, 0.85)","rgba(247, 129, 191, 0.85)","rgba(166, 86, 40, 0.85)","rgba(153, 153, 153, 0.85)","rgba(153, 153, 153, 0.85)","rgba(102, 194, 165, 0.85)","rgba(228, 26, 28, 0.85)","rgba(55, 126, 184, 0.85)","rgba(152, 78, 163, 0.85)","rgba(255, 127, 0, 0.85)","rgba(166, 86, 40, 0.85)","rgba(153, 153, 153, 0.85)"],"borderWidth":[1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,3,1],"borderWidthSelected":[2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,5,2],"title":["(Breiman, Friedman, Olshen, & Stone, 1984)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 2","(Breiman, 2001)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 2","(see Breiman, 1996)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 3","(Hastie, Tibshirani, & Friedman, 2009)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 3","(Adadi & Berrada, 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Došilović, Brčić, & Hlupić, 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Du, Liu, & Hu, 2019)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Guidotti et al., 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Haddouchi & Berrado, 2019)\n<br><b>Section(s):<\/b> Related work, Visualization toolkits, Local explanation (3 sections)\n<br><b>Connections:<\/b> 8","(Breiman, un2001)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 4","(Genuer, Poggi, & Tuleau-Malot, 2010)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 4","(Louppe, Wehenkel, Sutera, & Geurts, 2013)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 4","(Friedman, 2001)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 8","(Liaw, Wiener, et al., 2002)\n<br><b>Section(s):<\/b> Visualization toolkits\n<br><b>Connections:<\/b> 2","(Tan, Hooker, & Wells, 2016)\n<br><b>Section(s):<\/b> Visualization toolkits\n<br><b>Connections:<\/b> 2","(Chipman, George, and McCulloh, 1998)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 2","(Gibbons et al., 2013)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 5","(Subsequently, Zhou, Zhou, and Hooker, 2018)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 3","(see Guidotti et al., 2018)\n<br><b>Section(s):<\/b> Local explanation\n<br><b>Connections:<\/b> 2","(Lou, Caruana, and Gehrke, 2012)\n<br><b>Section(s):<\/b> Local explanation\n<br><b>Connections:<\/b> 2","(Meinshausen, 2010)\n<br><b>Section(s):<\/b> Rule extraction, Experimental design, Analysis (3 sections)\n<br><b>Connections:<\/b> 3","(Akosa, 2017)\n<br><b>Section(s):<\/b> Experimental design\n<br><b>Connections:<\/b> 2","(García, Mollineda, & Sánchez, 2009)\n<br><b>Section(s):<\/b> Experimental design\n<br><b>Connections:<\/b> 2","(Liaw et al., 2002)\n<br><b>Section(s):<\/b> Analysis\n<br><b>Connections:<\/b> 2","(Hastie et al., 2009)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 2","(Lipton, 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Ehrlinger, 2016)\n<br><b>Section(s):<\/b> Visualization toolkits\n<br><b>Connections:<\/b> 2","(Zhou et al., 2018)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 2","(Deng, 2019)\n<br><b>Section(s):<\/b> Rule extraction, Experimental design, Analysis (3 sections)\n<br><b>Connections:<\/b> 3","(Sokolova, Japkowicz, Szpakowicz, 2006)\n<br><b>Section(s):<\/b> Experimental design\n<br><b>Connections:<\/b> 2"],"font.size":[10.5,10.5,12,12,15,15,15,15,19.5,13.5,13.5,13.5,19.5,10.5,10.5,10.5,15,12,10.5,10.5,12,10.5,10.5,10.5,10.5,15,10.5,10.5,12,10.5],"font.vadjust":[-7.35,-7.35,-8.399999999999999,-8.399999999999999,-10.5,-10.5,-10.5,-10.5,-13.65,-9.449999999999999,-9.449999999999999,-9.449999999999999,-13.65,-7.35,-7.35,-7.35,-10.5,-8.399999999999999,-7.35,-7.35,-8.399999999999999,-7.35,-7.35,-7.35,-7.35,-10.5,-7.35,-7.35,-8.399999999999999,-7.35],"x":[-0.131220841700425,-0.5338869017986387,-0.6079719602481056,-0.7506458832291836,0.6873384019856548,0.5402440983389927,0.5795438112331048,0.531914144333848,0.3529655403235288,-0.72971251342704,-0.9339942442343938,-1,-0.8770700278924546,0.09353504412540459,1,0.9741730154625226,-0.5388760831892117,-0.7162398685030397,0.1763794014886566,0.0009717022734050396,0.4280323155068428,0.1406376554759865,0.0003612498528278163,0.5539048440483061,-0.8373148286520492,0.7184412864928902,0.02498551779213698,-0.5680225853723436,0.5987345596757605,-0.07502230443586932],"y":[0.2566567384806639,-0.7925576837007097,-0.5706141063884114,-0.7139523963437109,-0.3474200140878467,-0.4515867631873537,-0.5969062404453618,-0.3014642452030273,-0.4888654546361746,0.08141609800828609,0.2286193884080132,0.003523028845041631,0.08227178678535729,-0.2775637960027925,0.1697516234158849,0.3755111213595386,0.6361611416231838,0.6914449884723575,-0.8062173171983938,-1,0.6245838136659314,0.975460152413667,0.8024922977831797,0.4607410848073874,-0.5048812590515523,-0.5044453422458056,-0.4669114058199197,0.8456913756759374,0.6822668898731969,1]},"edges":{"from":[3,3,4,4,5,7,7,7,7,7,8,8,8,8,9,9,9,10,10,11,12,12,12,12,13,13,13,14,14,15,11,11,16,18,20,20,21,21,20,11,22,24,25,25,26,27,27,24],"to":[4,5,5,29,29,8,9,10,11,31,9,10,11,31,10,11,31,11,31,31,13,14,15,15,14,15,15,15,15,15,16,32,32,19,21,20,20,34,34,22,23,36,26,37,37,24,36,36],"distance":[257,617,342,554,175,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,99,99,189,289,99,189,289,189,289,85,84,297,187,702,312,433,79,468,368,128,680,14,87,87,87,144,469,307],"width":[1.715,0.5,1.29,0.5,2.125,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.505,2.505,2.055,1.555,2.505,2.055,1.555,2.055,1.555,2.575,2.58,1.515,2.065,0.5,1.44,0.835,2.605,0.6600000000000001,1.16,2.36,0.5,2.93,2.565,2.565,2.565,2.28,0.6549999999999998,1.465],"color":["rgba(255, 111, 111, 0.3)","rgba(204, 204, 204, 0.25)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(204, 204, 204, 0.25)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)","rgba(255, 111, 111, 0.3)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)","rgba(255, 111, 111, 0.3)","rgba(204, 204, 204, 0.25)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)"],"title":["Distance: 257 characters","Distance: 617 characters","Distance: 342 characters","Distance: 554 characters","Distance: 175 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 99 characters","Distance: 99 characters","Distance: 189 characters","Distance: 289 characters","Distance: 99 characters","Distance: 189 characters","Distance: 289 characters","Distance: 189 characters","Distance: 289 characters","Distance: 85 characters","Distance: 84 characters","Distance: 297 characters","Distance: 187 characters","Distance: 702 characters","Distance: 312 characters","Distance: 433 characters","Distance: 79 characters","Distance: 468 characters","Distance: 368 characters","Distance: 128 characters","Distance: 680 characters","Distance: 14 characters","Distance: 87 characters","Distance: 87 characters","Distance: 87 characters","Distance: 144 characters","Distance: 469 characters","Distance: 307 characters"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false,"borderWidth":1,"borderWidthSelected":2},"manipulation":{"enabled":false},"edges":{"smooth":false},"physics":{"enabled":false},"interaction":{"dragNodes":true,"dragView":true,"zoomView":true,"zoomSpeed":0.2}},"groups":["Introduction","Related work","Random forest extra information","Visualization toolkits","Size reduction","Local explanation","Rule extraction","Experimental design","Analysis"],"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":null,"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","igraphlayout":{"type":"full"},"highlight":{"enabled":true,"hoverNearest":false,"degree":1,"algorithm":"all","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+<div class="visNetwork html-widget html-fill-item" id="htmlwidget-8f180bc512acca8bd633" style="width:100%;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-8f180bc512acca8bd633">{"x":{"nodes":{"id":[2,3,4,5,7,8,9,10,11,12,13,14,15,16,18,19,20,21,22,23,24,25,26,27,29,31,32,34,36,37],"citation_text":["(Breiman, Friedman, Olshen, & Stone, 1984)","(Breiman, 2001)","(see Breiman, 1996)","(Hastie, Tibshirani, & Friedman, 2009)","(Adadi & Berrada, 2018)","(Došilović, Brčić, & Hlupić, 2018)","(Du, Liu, & Hu, 2019)","(Guidotti et al., 2018)","(Haddouchi & Berrado, 2019)","(Breiman, un2001)","(Genuer, Poggi, & Tuleau-Malot, 2010)","(Louppe, Wehenkel, Sutera, & Geurts, 2013)","(Friedman, 2001)","(Liaw, Wiener, et al., 2002)","(Tan, Hooker, & Wells, 2016)","(Chipman, George, and McCulloh, 1998)","(Gibbons et al., 2013)","(Subsequently, Zhou, Zhou, and Hooker, 2018)","(see Guidotti et al., 2018)","(Lou, Caruana, and Gehrke, 2012)","(Meinshausen, 2010)","(Akosa, 2017)","(García, Mollineda, & Sánchez, 2009)","(Liaw et al., 2002)","(Hastie et al., 2009)","(Lipton, 2018)","(Ehrlinger, 2016)","(Zhou et al., 2018)","(Deng, 2019)","(Sokolova, Japkowicz, Szpakowicz, 2006)"],"label":["(Breiman, Friedman, Ol...","(Breiman, 2001)","(see Breiman, 1996)","(Hastie, Tibshirani, &...","(Adadi & Berrada, 2018)","(Došilović, Brčić, & H...","(Du, Liu, & Hu, 2019)","(Guidotti et al., 2018)","(Haddouchi & Berrado, ...","(Breiman, un2001)","(Genuer, Poggi, & Tule...","(Louppe, Wehenkel, Sut...","(Friedman, 2001)","(Liaw, Wiener, et al.,...","(Tan, Hooker, & Wells,...","(Chipman, George, and ...","(Gibbons et al., 2013)","(Subsequently, Zhou, Z...","(see Guidotti et al., ...","(Lou, Caruana, and Geh...","(Meinshausen, 2010)","(Akosa, 2017)","(García, Mollineda, & ...","(Liaw et al., 2002)","(Hastie et al., 2009)","(Lipton, 2018)","(Ehrlinger, 2016)","(Zhou et al., 2018)","(Deng, 2019)","(Sokolova, Japkowicz, ..."],"sections":["Introduction","Introduction","Introduction","Introduction","Related work","Related work","Related work","Related work","Related work, Visualization toolkits, Local explanation","Random forest extra information","Random forest extra information","Random forest extra information","Random forest extra information","Visualization toolkits","Visualization toolkits","Size reduction","Size reduction","Size reduction","Local explanation","Local explanation","Rule extraction, Experimental design, Analysis","Experimental design","Experimental design","Analysis","Introduction","Related work","Visualization toolkits","Size reduction","Rule extraction, Experimental design, Analysis","Experimental design"],"n_sections":[1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,3,1],"primary_section":["Introduction","Introduction","Introduction","Introduction","Related work","Related work","Related work","Related work","Related work","Random forest extra information","Random forest extra information","Random forest extra information","Random forest extra information","Visualization toolkits","Visualization toolkits","Size reduction","Size reduction","Size reduction","Local explanation","Local explanation","Rule extraction","Experimental design","Experimental design","Analysis","Introduction","Related work","Visualization toolkits","Size reduction","Rule extraction","Experimental design"],"connections":[2,2,3,3,5,5,5,5,8,4,4,4,8,2,2,2,5,3,2,2,3,2,2,2,2,5,2,2,3,2],"size":[10.5,10.5,12,12,15,15,15,15,19.5,13.5,13.5,13.5,19.5,10.5,10.5,10.5,15,12,10.5,10.5,12,10.5,10.5,10.5,10.5,15,10.5,10.5,12,10.5],"group":["Introduction","Introduction","Introduction","Introduction","Related work","Related work","Related work","Related work","Related work","Random forest extra information","Random forest extra information","Random forest extra information","Random forest extra information","Visualization toolkits","Visualization toolkits","Size reduction","Size reduction","Size reduction","Local explanation","Local explanation","Rule extraction","Experimental design","Experimental design","Analysis","Introduction","Related work","Visualization toolkits","Size reduction","Rule extraction","Experimental design"],"color":["rgba(228, 26, 28, 0.85)","rgba(228, 26, 28, 0.85)","rgba(228, 26, 28, 0.85)","rgba(228, 26, 28, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(55, 126, 184, 0.85)","rgba(77, 175, 74, 0.85)","rgba(77, 175, 74, 0.85)","rgba(77, 175, 74, 0.85)","rgba(77, 175, 74, 0.85)","rgba(152, 78, 163, 0.85)","rgba(152, 78, 163, 0.85)","rgba(255, 127, 0, 0.85)","rgba(255, 127, 0, 0.85)","rgba(255, 127, 0, 0.85)","rgba(247, 129, 191, 0.85)","rgba(247, 129, 191, 0.85)","rgba(166, 86, 40, 0.85)","rgba(153, 153, 153, 0.85)","rgba(153, 153, 153, 0.85)","rgba(102, 194, 165, 0.85)","rgba(228, 26, 28, 0.85)","rgba(55, 126, 184, 0.85)","rgba(152, 78, 163, 0.85)","rgba(255, 127, 0, 0.85)","rgba(166, 86, 40, 0.85)","rgba(153, 153, 153, 0.85)"],"borderWidth":[1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,1,1,1,1,3,1,1,1,1,1,1,1,3,1],"borderWidthSelected":[2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,2,2,2,2,5,2,2,2,2,2,2,2,5,2],"title":["(Breiman, Friedman, Olshen, & Stone, 1984)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 2","(Breiman, 2001)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 2","(see Breiman, 1996)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 3","(Hastie, Tibshirani, & Friedman, 2009)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 3","(Adadi & Berrada, 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Došilović, Brčić, & Hlupić, 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Du, Liu, & Hu, 2019)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Guidotti et al., 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Haddouchi & Berrado, 2019)\n<br><b>Section(s):<\/b> Related work, Visualization toolkits, Local explanation (3 sections)\n<br><b>Connections:<\/b> 8","(Breiman, un2001)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 4","(Genuer, Poggi, & Tuleau-Malot, 2010)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 4","(Louppe, Wehenkel, Sutera, & Geurts, 2013)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 4","(Friedman, 2001)\n<br><b>Section(s):<\/b> Random forest extra information\n<br><b>Connections:<\/b> 8","(Liaw, Wiener, et al., 2002)\n<br><b>Section(s):<\/b> Visualization toolkits\n<br><b>Connections:<\/b> 2","(Tan, Hooker, & Wells, 2016)\n<br><b>Section(s):<\/b> Visualization toolkits\n<br><b>Connections:<\/b> 2","(Chipman, George, and McCulloh, 1998)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 2","(Gibbons et al., 2013)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 5","(Subsequently, Zhou, Zhou, and Hooker, 2018)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 3","(see Guidotti et al., 2018)\n<br><b>Section(s):<\/b> Local explanation\n<br><b>Connections:<\/b> 2","(Lou, Caruana, and Gehrke, 2012)\n<br><b>Section(s):<\/b> Local explanation\n<br><b>Connections:<\/b> 2","(Meinshausen, 2010)\n<br><b>Section(s):<\/b> Rule extraction, Experimental design, Analysis (3 sections)\n<br><b>Connections:<\/b> 3","(Akosa, 2017)\n<br><b>Section(s):<\/b> Experimental design\n<br><b>Connections:<\/b> 2","(García, Mollineda, & Sánchez, 2009)\n<br><b>Section(s):<\/b> Experimental design\n<br><b>Connections:<\/b> 2","(Liaw et al., 2002)\n<br><b>Section(s):<\/b> Analysis\n<br><b>Connections:<\/b> 2","(Hastie et al., 2009)\n<br><b>Section(s):<\/b> Introduction\n<br><b>Connections:<\/b> 2","(Lipton, 2018)\n<br><b>Section(s):<\/b> Related work\n<br><b>Connections:<\/b> 5","(Ehrlinger, 2016)\n<br><b>Section(s):<\/b> Visualization toolkits\n<br><b>Connections:<\/b> 2","(Zhou et al., 2018)\n<br><b>Section(s):<\/b> Size reduction\n<br><b>Connections:<\/b> 2","(Deng, 2019)\n<br><b>Section(s):<\/b> Rule extraction, Experimental design, Analysis (3 sections)\n<br><b>Connections:<\/b> 3","(Sokolova, Japkowicz, Szpakowicz, 2006)\n<br><b>Section(s):<\/b> Experimental design\n<br><b>Connections:<\/b> 2"],"font.size":[10.5,10.5,12,12,15,15,15,15,19.5,13.5,13.5,13.5,19.5,10.5,10.5,10.5,15,12,10.5,10.5,12,10.5,10.5,10.5,10.5,15,10.5,10.5,12,10.5],"font.vadjust":[-7.35,-7.35,-8.399999999999999,-8.399999999999999,-10.5,-10.5,-10.5,-10.5,-13.65,-9.449999999999999,-9.449999999999999,-9.449999999999999,-13.65,-7.35,-7.35,-7.35,-10.5,-8.399999999999999,-7.35,-7.35,-8.399999999999999,-7.35,-7.35,-7.35,-7.35,-10.5,-7.35,-7.35,-8.399999999999999,-7.35],"x":[-0.04096073733375394,0.9411043029602586,0.79568686735324,1,0.1882242606020204,-0.03846142886298465,0.04322091121215421,-0.07244744377246026,0.2230726065873068,0.3046064324140629,0.3885761505208603,0.5666058079751377,0.4565412390500445,0.3612208260801075,-0.7905242576264694,-1,-0.2564554876741678,-0.3790105608854388,0.5852164735072394,0.8326694442596512,-0.6276352902691812,-0.8589956450605674,-0.6678961324838638,-0.8462524555843394,0.8758656148092125,0.08681177914996097,0.1568604216204605,-0.178763552026204,-0.6890922677452322,-0.6939694896124482],"y":[-0.2806624992521164,0.0526670596089569,-0.1389955004893778,-0.1694139695659084,0.4287999688282291,0.6474642293868591,0.373447662060282,0.4828560097617067,0.6784609972139048,-0.864554405484247,-0.6764578664987329,-0.7679797206230763,-0.8777934980230251,0.9513217644941452,0.03299610498785666,0.01785097632614763,-0.795303343819676,-0.9292905458815658,0.6142370570513975,0.5516666696678825,-0.4014622967446814,0.5590093961817442,0.4858003891967579,-0.4411459560856865,-0.3632541453777898,0.5612534681597787,1,-1,-0.5751004437288481,0.7104508996802568]},"edges":{"from":[3,3,4,4,5,7,7,7,7,7,8,8,8,8,9,9,9,10,10,11,12,12,12,12,13,13,13,14,14,15,11,11,16,18,20,20,21,21,20,11,22,24,25,25,26,27,27,24],"to":[4,5,5,29,29,8,9,10,11,31,9,10,11,31,10,11,31,11,31,31,13,14,15,15,14,15,15,15,15,15,16,32,32,19,21,20,20,34,34,22,23,36,26,37,37,24,36,36],"distance":[257,617,342,554,175,150,150,150,150,150,150,150,150,150,150,150,150,150,150,150,99,99,189,289,99,189,289,189,289,85,84,297,187,702,312,433,79,468,368,128,680,14,87,87,87,144,469,307],"width":[1.715,0.5,1.29,0.5,2.125,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.25,2.505,2.505,2.055,1.555,2.505,2.055,1.555,2.055,1.555,2.575,2.58,1.515,2.065,0.5,1.44,0.835,2.605,0.6600000000000001,1.16,2.36,0.5,2.93,2.565,2.565,2.565,2.28,0.6549999999999998,1.465],"color":["rgba(255, 111, 111, 0.3)","rgba(204, 204, 204, 0.25)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(204, 204, 204, 0.25)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)","rgba(255, 111, 111, 0.3)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)","rgba(255, 111, 111, 0.3)","rgba(204, 204, 204, 0.25)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(255, 111, 111, 0.3)","rgba(127, 179, 213, 0.3)","rgba(127, 179, 213, 0.3)"],"title":["Distance: 257 characters","Distance: 617 characters","Distance: 342 characters","Distance: 554 characters","Distance: 175 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 150 characters","Distance: 99 characters","Distance: 99 characters","Distance: 189 characters","Distance: 289 characters","Distance: 99 characters","Distance: 189 characters","Distance: 289 characters","Distance: 189 characters","Distance: 289 characters","Distance: 85 characters","Distance: 84 characters","Distance: 297 characters","Distance: 187 characters","Distance: 702 characters","Distance: 312 characters","Distance: 433 characters","Distance: 79 characters","Distance: 468 characters","Distance: 368 characters","Distance: 128 characters","Distance: 680 characters","Distance: 14 characters","Distance: 87 characters","Distance: 87 characters","Distance: 87 characters","Distance: 144 characters","Distance: 469 characters","Distance: 307 characters"]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","physics":false,"borderWidth":1,"borderWidthSelected":2},"manipulation":{"enabled":false},"edges":{"smooth":false},"physics":{"enabled":false},"interaction":{"dragNodes":true,"dragView":true,"zoomView":true,"zoomSpeed":0.2}},"groups":["Introduction","Related work","Random forest extra information","Visualization toolkits","Size reduction","Local explanation","Rule extraction","Experimental design","Analysis"],"width":null,"height":null,"idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":null,"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","igraphlayout":{"type":"full"},"highlight":{"enabled":true,"hoverNearest":false,"degree":1,"algorithm":"all","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
 
 ### Access network statistics
 
@@ -413,15 +380,15 @@ analysis$citation_metrics$section_distribution
 #> # A tibble: 9 × 3
 #>   section                             n percentage
 #>   <chr>                           <int>      <dbl>
-#> 1 Related work                        9      17.6 
-#> 2 Introduction                        7      13.7 
-#> 3 Experimental design                 6      11.8 
-#> 4 Local explanation                   6      11.8 
-#> 5 Random forest extra information     6      11.8 
-#> 6 Size reduction                      6      11.8 
-#> 7 Visualization toolkits              5       9.8 
-#> 8 Analysis                            4       7.84
-#> 9 Rule extraction                     2       3.92
+#> 1 Related work                        9         18
+#> 2 Introduction                        7         14
+#> 3 Experimental design                 6         12
+#> 4 Local explanation                   6         12
+#> 5 Size reduction                      6         12
+#> 6 Random forest extra information     5         10
+#> 7 Visualization toolkits              5         10
+#> 8 Analysis                            4          8
+#> 9 Rule extraction                     2          4
 ```
 
 ## Advanced: Word distribution analysis
