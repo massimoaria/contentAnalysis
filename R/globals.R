@@ -17,5 +17,5 @@ utils::globalVariables(c(
   "total_words", "relative_frequency", "segment_name.x", "segment_name.y",
   "n", ".", "ref_source", "ref_first_author_surname",
   "citation", "citation1", "citation2", "distance", "font.size", "n_sections",
-  "primary_section", "sections", "size"
+  "primary_section", "sections", "size", "median"
 ))

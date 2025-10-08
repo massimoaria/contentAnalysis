@@ -102,6 +102,13 @@ map_citations_to_segments <- function(citations_df,
 #' @param text Character string or named list. Document text or text with sections.
 #' @param doi Character string or NULL. DOI for CrossRef reference retrieval.
 #' @param mailto Character string or NULL. Email for CrossRef API.
+#' @param citation_type Character string. Type of citations to extract:
+#'   \itemize{
+#'     \item "all": Extract all citation types (default)
+#'     \item "numeric_superscript": Only numeric citations (brackets and superscript) + narrative
+#'     \item "numeric_bracketed": Only bracketed numeric citations + narrative
+#'     \item "author_year": Only author-year citations + narrative
+#'   }
 #' @param window_size Integer. Words before/after citations for context (default: 10).
 #' @param min_word_length Integer. Minimum word length for analysis (default: 3).
 #' @param remove_stopwords Logical. Remove stopwords (default: TRUE).
@@ -137,13 +144,26 @@ map_citations_to_segments <- function(citations_df,
 #'   \item Bibliometric indicators
 #' }
 #'
+#' The citation_type parameter filters which citation patterns to search for,
+#' reducing false positives. Narrative citations are always included as they
+#' are context-dependent.
+#'
 #' @examples
 #' \dontrun{
-#' doc <- pdf2txt_auto("paper.pdf")
+#' # For documents with numeric citations
+#' doc <- pdf2txt_auto("paper.pdf", citation_type = "numeric_bracketed")
 #' analysis <- analyze_scientific_content(
 #'   doc,
+#'   citation_type = "numeric_bracketed",
 #'   doi = "10.xxxx/xxxxx",
 #'   mailto = "your@email.com"
+#' )
+#'
+#' # For documents with author-year citations
+#' doc <- pdf2txt_auto("paper.pdf", citation_type = "author_year")
+#' analysis <- analyze_scientific_content(
+#'   doc,
+#'   citation_type = "author_year"
 #' )
 #'
 #' summary(analysis)
@@ -157,17 +177,22 @@ map_citations_to_segments <- function(citations_df,
 #' @importFrom stringr str_replace_all str_trim str_locate_all str_sub str_detect str_extract str_split str_extract_all str_length str_count str_remove str_squish str_to_title str_to_lower
 #' @importFrom tidytext unnest_tokens
 analyze_scientific_content <- function(text,
-                                                doi = NULL,
-                                                mailto = NULL,
-                                                window_size = 10,
-                                                min_word_length = 3,
-                                                remove_stopwords = TRUE,
-                                                language = "en",
-                                                custom_stopwords = NULL,
-                                                ngram_range = c(1, 3),
-                                                parse_multiple_citations = TRUE,
-                                                use_sections_for_citations = "auto",
-                                                n_segments_citations = 10) {
+                                       doi = NULL,
+                                       mailto = NULL,
+                                       citation_type = c("all", "numeric_superscript",
+                                                         "numeric_bracketed", "author_year"),
+                                       window_size = 10,
+                                       min_word_length = 3,
+                                       remove_stopwords = TRUE,
+                                       language = "en",
+                                       custom_stopwords = NULL,
+                                       ngram_range = c(1, 3),
+                                       parse_multiple_citations = TRUE,
+                                       use_sections_for_citations = "auto",
+                                       n_segments_citations = 10) {
+
+  # Validate citation_type parameter
+  citation_type <- match.arg(citation_type)
 
   results <- list()
 
@@ -187,7 +212,7 @@ analyze_scientific_content <- function(text,
     }
   } else {
     clean_text <- text
-    sections_to_use <- NULL  # <-- AGGIUNGERE QUESTA RIGA
+    sections_to_use <- NULL
   }
 
   clean_text <- clean_text %>%
@@ -203,8 +228,9 @@ analyze_scientific_content <- function(text,
       length(stringr::str_split(clean_text, "[.!?]+")[[1]])
   )
 
-  # Citation patterns
-  citation_patterns <- list(
+  # Define ALL citation patterns
+  all_citation_patterns <- list(
+    # Author-year patterns
     complex_multiple_citations = "\\((?:see\\s+)?(?:e\\.g\\.\\s+)?[A-Z][^)]*(?:\\d{4}[a-z]?[;,][^)]*){2,}\\d{4}[a-z]?[^)]*\\)",
     narrative_four_authors_and = "[A-Z][A-Za-z'-]+,\\s*[A-Z][A-Za-z'-]+,\\s*[A-Z][A-Za-z'-]+,\\s*(?:and|&)\\s*[A-Z][A-Za-z'-]+\\s*\\(\\d{4}[a-z]?\\)",
     narrative_three_authors_and = "[A-Z][A-Za-z'-]+,\\s*[A-Z][A-Za-z'-]+,\\s*(?:and|&)\\s*[A-Z][A-Za-z'-]+\\s*\\(\\d{4}[a-z]?\\)",
@@ -218,11 +244,49 @@ analyze_scientific_content <- function(text,
     author_year_and = "\\([A-Z][A-Za-z'-]+(?:,\\s*[A-Z][A-Za-z'-]+)*,?\\s+(?:and|&)\\s+[A-Z][A-Za-z'-]+,\\s*\\d{4}[a-z]?\\)",
     author_year_ampersand = "\\([A-Z][A-Za-z'-]+[^)]*&[^)]*\\d{4}[a-z]?\\)",
     author_year_basic = "\\([A-Z][A-Za-z'-]+(?:\\s+[A-Z][A-Za-z'-]+)*,\\s*\\d{4}[a-z]?\\)",
+
+    # Numeric patterns
     numbered_simple = "\\[\\d+\\]",
     numbered_multiple = "\\[\\d+(?:[-,;\\s]+\\d+)*\\]",
     superscript = "[\u00b9\u00b2\u00b3\u2074\u2075\u2076\u2077\u2078\u2079\u2070]+",
+
+    # Other
     doi_pattern = "https?://doi\\.org/[\\w\\./\\-]+"
   )
+
+  # Filter patterns based on citation_type
+  citation_patterns <- list()
+
+  if (citation_type == "all") {
+    citation_patterns <- all_citation_patterns
+    message("Extracting all citation types")
+
+  } else if (citation_type == "numeric_superscript") {
+    # Include numeric patterns + narrative patterns
+    citation_patterns <- all_citation_patterns[c(
+      "numbered_simple", "numbered_multiple", "superscript",
+      "narrative_four_authors_and", "narrative_three_authors_and",
+      "narrative_two_authors_and", "narrative_etal",
+      "narrative_multiple_authors", "narrative_single"
+    )]
+    message("Extracting numeric citations (bracketed and superscript) and narrative citations")
+
+  } else if (citation_type == "numeric_bracketed") {
+    # Include only bracketed numeric + narrative patterns
+    citation_patterns <- all_citation_patterns[c(
+      "numbered_simple", "numbered_multiple",
+      "narrative_four_authors_and", "narrative_three_authors_and",
+      "narrative_two_authors_and", "narrative_etal",
+      "narrative_multiple_authors", "narrative_single"
+    )]
+    message("Extracting bracketed numeric citations and narrative citations")
+
+  } else if (citation_type == "author_year") {
+    # Include all author-year patterns (excluding numeric)
+    citation_patterns <- all_citation_patterns[!names(all_citation_patterns) %in%
+                                                 c("numbered_simple", "numbered_multiple", "superscript")]
+    message("Extracting author-year citations only")
+  }
 
   # Inizializza con struttura completa
   all_citations <- tibble::tibble(
@@ -293,7 +357,7 @@ analyze_scientific_content <- function(text,
     }
   }
 
-  all_citations <- all_citations %>%  dplyr::arrange(start_pos)
+  all_citations <- all_citations %>% dplyr::arrange(start_pos)
 
   # Parse complex citations
   parsed_citations <- tibble::tibble()
@@ -712,70 +776,21 @@ analyze_scientific_content <- function(text,
         dplyr::mutate(percentage = round(n / sum(n) * 100, 1))
     } else {
       NULL
-    }
+    },
+    citation_type_used = citation_type
   )
 
   class(results) <- c("enhanced_scientific_content_analysis", "list")
   return(results)
 }
 
-#' Print diagnostic information about citation-reference matching
-#'
-#' @param results Output from analyze_scientific_content_enhanced()
-#'
-#' @return Invisibly returns match summary
-#'
-#' @export
-print_matching_diagnostics <- function(results) {
-
-  cat("\n=== CITATION-REFERENCE MATCHING DIAGNOSTICS ===\n\n")
-
-  if (is.null(results$citation_references_mapping)) {
-    cat("No citation-reference mapping performed (missing References section)\n")
-    return(invisible(NULL))
-  }
-
-  mapping <- results$citation_references_mapping
-
-  cat("Total citations:", nrow(mapping), "\n")
-  cat("Total references parsed:", nrow(results$parsed_references), "\n\n")
-
-  cat("Match quality distribution:\n")
-  match_summary <- mapping %>%
-    dplyr::count(match_confidence) %>%
-    dplyr::arrange(dplyr::desc(n))
-  print(match_summary)
-
-  cat("\n")
-  cat("Match rate:",
-      round(sum(!is.na(mapping$matched_ref_id)) / nrow(mapping) * 100, 1),
-      "%\n")
-
-  cat("\nHigh confidence matches:",
-      sum(mapping$match_confidence %in% c("high", "high_second_author"), na.rm = TRUE), "\n")
-
-  cat("\nCitations without matches:\n")
-  unmatched <- mapping %>%
-    dplyr::filter(is.na(matched_ref_id)) %>%
-    dplyr::select(citation_text_clean, cite_author, cite_year, match_confidence)
-
-  if (nrow(unmatched) > 0) {
-    print(head(unmatched, 10))
-    if (nrow(unmatched) > 10) {
-      cat("... and", nrow(unmatched) - 10, "more\n")
-    }
-  } else {
-    cat("All citations matched!\n")
-  }
-
-  invisible(match_summary)
-}
-
 # color palette
 colorlist <- function() {
   c(
-    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#F781BF", "#999999", "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F",
-    "#B3B3B3", "#A6CEE3", "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6", "#6A3D9A", "#B15928", "#8DD3C7", "#BEBADA",
-    "#FB8072", "#80B1D3", "#FDB462", "#B3DE69", "#D9D9D9", "#BC80BD", "#CCEBC5"
+    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#F781BF", "#999999",
+    "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#B3B3B3", "#A6CEE3",
+    "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6",
+    "#6A3D9A", "#B15928", "#8DD3C7", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462", "#B3DE69",
+    "#D9D9D9", "#BC80BD", "#CCEBC5"
   )
 }

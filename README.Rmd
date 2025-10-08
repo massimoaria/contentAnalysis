@@ -53,7 +53,9 @@ download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 
 ### Import PDF with automatic section detection
 ```{r}
-doc <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
+doc <- pdf2txt_auto("example_paper.pdf", 
+                    n_columns = 2,
+                    citation_type = "author_year")
 
 # Check detected sections
 names(doc)
@@ -65,7 +67,8 @@ names(doc)
 analysis <- analyze_scientific_content(
   text = doc,
   doi = "10.1016/j.mlwa.2021.100094",
-  mailto = "your@email.com"
+  mailto = "your@email.com",
+  citation_type = "author_year"
 )
 ```
 

@@ -48,7 +48,7 @@ download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 
 ```{r import-basic}
 # Import with automatic section detection
-doc <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
+doc <- pdf2txt_auto("example_paper.pdf", n_columns = 2, citation_type = "author_year")
 
 # Check what sections were detected
 names(doc)
@@ -79,8 +79,9 @@ For papers with specific layouts:
 ```{r analysis}
 analysis <- analyze_scientific_content(
   text = doc,
-  doi = "10.1016/j.mlwa.2021.100094",  # Optional but recommended
-  mailto = "your@email.com",                 # Required for CrossRef
+  doi = "10.1016/j.mlwa.2021.100094",        # Optional but recommended
+  mailto = "your@email.com",                 # Required for CrossRef,
+  citation_type = "author_year",             # Citation style  
   window_size = 10,                          # Words around citations
   remove_stopwords = TRUE,
   ngram_range = c(1, 3),
@@ -291,12 +292,6 @@ head(matched)
 
 # Match quality
 table(matched$match_confidence)
-```
-
-### Diagnostic Information
-
-```{r diagnostics}
-print_matching_diagnostics(analysis)
 ```
 
 ### Manual Reference Parsing

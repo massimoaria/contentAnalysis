@@ -8,7 +8,8 @@ pdf2txt_multicolumn_safe(
   file,
   n_columns = NULL,
   column_threshold = NULL,
-  preserve_structure = TRUE
+  preserve_structure = TRUE,
+  citation_type = c("none", "numeric_superscript", "numeric_bracketed", "author_year")
 )
 }
 \arguments{
@@ -22,13 +23,24 @@ separation. If NULL and n_columns is NULL, calculated automatically.}
 
 \item{preserve_structure}{Logical. If TRUE, preserves paragraph breaks and
 section structure. If FALSE, returns continuous text. Default is TRUE.}
+
+\item{citation_type}{Character string. Type of citations in the document:
+\itemize{
+\item "numeric_superscript": Numeric citations in superscript (converted to \link[dplyr:context]{dplyr::n})
+\item "numeric_bracketed": Numeric citations already in brackets \link[dplyr:context]{dplyr::n} (no conversion)
+\item "author_year": Author-year citations like (Smith, 2020) (no conversion)
+\item "none": No citation conversion
+}
+Default is "none".}
 }
 \value{
 Character string with extracted text.
 }
 \description{
 Extracts text from PDF files handling multi-column layouts, with options
-for structure preservation and automatic column detection.
+for structure preservation and automatic column detection. This version
+includes post-processing to convert superscript citation numbers based on
+the specified citation type.
 }
 \details{
 This function uses \code{pdftools::pdf_data()} for precise text extraction with
@@ -38,21 +50,19 @@ spatial coordinates. It handles:
 \item Section detection and paragraph preservation
 \item Hyphenation removal
 \item Title and heading identification
+\item Superscript citation number conversion (only if citation_type = "numeric_superscript")
 }
 
 If \code{pdf_data()} fails, falls back to \code{pdftools::pdf_text()}.
 }
 \examples{
 \dontrun{
-# Extract from 2-column paper
-text <- pdf2txt_multicolumn_safe("paper.pdf", n_columns = 2)
+# Extract from 2-column paper with superscript citations
+text <- pdf2txt_multicolumn_safe("paper.pdf", n_columns = 2,
+                                  citation_type = "numeric_superscript")
 
-# Automatic column detection
-text <- pdf2txt_multicolumn_safe("paper.pdf")
-
-# Single column, no structure
-text <- pdf2txt_multicolumn_safe("paper.pdf", n_columns = 1,
-                                  preserve_structure = FALSE)
+# Extract paper with author-year citations (no conversion)
+text <- pdf2txt_multicolumn_safe("paper.pdf", citation_type = "author_year")
 }
 
 }

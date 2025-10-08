@@ -8,6 +8,7 @@ analyze_scientific_content(
   text,
   doi = NULL,
   mailto = NULL,
+  citation_type = c("all", "numeric_superscript", "numeric_bracketed", "author_year"),
   window_size = 10,
   min_word_length = 3,
   remove_stopwords = TRUE,
@@ -25,6 +26,14 @@ analyze_scientific_content(
 \item{doi}{Character string or NULL. DOI for CrossRef reference retrieval.}
 
 \item{mailto}{Character string or NULL. Email for CrossRef API.}
+
+\item{citation_type}{Character string. Type of citations to extract:
+\itemize{
+\item "all": Extract all citation types (default)
+\item "numeric_superscript": Only numeric citations (brackets and superscript) + narrative
+\item "numeric_bracketed": Only bracketed numeric citations + narrative
+\item "author_year": Only author-year citations + narrative
+}}
 
 \item{window_size}{Integer. Words before/after citations for context (default: 10).}
 
@@ -73,14 +82,27 @@ This function performs:
 \item Citation context extraction
 \item Bibliometric indicators
 }
+
+The citation_type parameter filters which citation patterns to search for,
+reducing false positives. Narrative citations are always included as they
+are context-dependent.
 }
 \examples{
 \dontrun{
-doc <- pdf2txt_auto("paper.pdf")
+# For documents with numeric citations
+doc <- pdf2txt_auto("paper.pdf", citation_type = "numeric_bracketed")
 analysis <- analyze_scientific_content(
   doc,
+  citation_type = "numeric_bracketed",
   doi = "10.xxxx/xxxxx",
   mailto = "your@email.com"
+)
+
+# For documents with author-year citations
+doc <- pdf2txt_auto("paper.pdf", citation_type = "author_year")
+analysis <- analyze_scientific_content(
+  doc,
+  citation_type = "author_year"
 )
 
 summary(analysis)

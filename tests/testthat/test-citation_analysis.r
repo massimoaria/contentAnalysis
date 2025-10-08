@@ -708,61 +708,6 @@ test_that("analyze_scientific_content works without References section", {
 })
 
 # ============================================================================
-# print_matching_diagnostics() - TESTS
-# ============================================================================
-
-test_that("print_matching_diagnostics handles NULL mapping", {
-  skip_if_not_installed("tidytext")
-
-  text <- "Simple text"
-  result <- analyze_scientific_content(text)
-
-  expect_output(
-    diag <- print_matching_diagnostics(result),
-    "No citation-reference mapping"
-  )
-
-  expect_null(diag)
-})
-
-test_that("print_matching_diagnostics prints match statistics", {
-  skip_if_not_installed("tidytext")
-
-  # Create result with mapping
-  text_list <- list(
-    Full_text = "Smith (2020) did research.",
-    References = "Smith, J. (2020). Paper. Journal."
-  )
-
-  result <- analyze_scientific_content(text_list)
-
-  if (!is.null(result$citation_references_mapping)) {
-    expect_output(
-      print_matching_diagnostics(result),
-      "CITATION-REFERENCE MATCHING"
-    )
-  }
-
-  expect_true(TRUE)
-})
-
-test_that("print_matching_diagnostics returns summary invisibly", {
-  skip_if_not_installed("tidytext")
-
-  text_list <- list(
-    Full_text = "Smith (2020) research.",
-    References = "Smith, J. (2020). Paper."
-  )
-
-  result <- analyze_scientific_content(text_list)
-
-  diag <- suppressMessages(print_matching_diagnostics(result))
-
-  # Should return something (or NULL)
-  expect_true(is.null(diag) || is.data.frame(diag))
-})
-
-# ============================================================================
 # STRESS TESTS
 # ============================================================================
 
