@@ -151,6 +151,13 @@ split_into_sections <- function(text, file_path = NULL) {
     }
   }
 
+  # rename Bibliography to References if the first exists and the second not
+  if ("Bibliography" %in% names(sections_list) &&
+      !("References" %in% names(sections_list))) {
+    sections_list[["References"]] <- sections_list[["Bibliography"]]
+    sections_list[["Bibliography"]] <- NULL
+  }
+
   message(sprintf("Found %d sections: %s",
                   length(sections_list),
                   paste(names(sections_list), collapse = ", ")))
