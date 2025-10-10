@@ -676,7 +676,8 @@ analyze_scientific_content <- function(text,
         parsed_references <- refs_crossref %>%
           dplyr::mutate(
             ref_id = paste0("REF_", row_number()),
-            ref_full_text = paste(
+            ref_full_text = ref_full,
+            ref_full_text2 = paste(
               ifelse(!is.na(author), paste0(author,","), ""),
               ifelse(!is.na(year), paste0("(", year, "),"), ""),
               ifelse(!is.na(article_title), paste0(article_title,"."), ""),
@@ -690,7 +691,7 @@ analyze_scientific_content <- function(text,
             n_authors = 1
           ) %>%
           dplyr::select(ref_id, ref_full_text, ref_authors, ref_year,
-                        ref_first_author, ref_first_author_normalized, n_authors, doi) %>%
+                        ref_first_author, ref_first_author_normalized, n_authors, doi, ref_full_text2) %>%
           mutate(ref_source = "crossref",
                  ref_full_text = ifelse(stringr::str_sub(ref_full_text, -1) == ",",
                  paste0(stringr::str_sub(ref_full_text, 1, -2), "."),ref_full_text)

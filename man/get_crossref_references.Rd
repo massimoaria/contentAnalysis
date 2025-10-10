@@ -2,45 +2,57 @@
 % Please edit documentation in R/crossref_api.R
 \name{get_crossref_references}
 \alias{get_crossref_references}
-\title{Retrieve references from CrossRef API}
+\title{Retrieve rich metadata from the CrossRef API for a given DOI}
 \usage{
-get_crossref_references(doi, mailto = NULL)
+get_crossref_references(doi, mailto = NULL, output = "references")
 }
 \arguments{
-\item{doi}{Character string. DOI of the article.}
+\item{doi}{Character string. The DOI (Digital Object Identifier) of the article.}
 
-\item{mailto}{Character string or NULL. Email address for polite API access.
-Recommended by CrossRef for better service. Default is NULL.}
+\item{mailto}{Character string or NULL. An email address for polite API access,
+as recommended by CrossRef. This can lead to better service. Default is NULL.}
+
+\item{output}{Character string. The desired output content. c("all","metadata","authors","references").}
 }
 \value{
-Data frame with reference information including:
+A list containing three main elements:
 \itemize{
-\item key: Reference key/identifier
-\item doi: DOI of cited work (if available)
-\item article_title: Title of cited article
-\item author: Author string
-\item year: Publication year
-\item journal: Journal name
-\item volume: Volume number
-\item first_page: First page
+\item \strong{main_metadata}: A data frame with a single row containing key
+metadata about the article (e.g., DOI, title, journal, year, volume, issue).
+\item \strong{authors}: A data frame listing all authors with their given name,
+family name, ORCID, and affiliation (if available).
+\item \strong{references}: A data frame containing detailed information for each
+reference in the article (e.g., key, DOI, title, author, year).
 }
-Returns NULL if no references found.
+Returns NULL if the DOI is not found or an error occurs.
 }
 \description{
-Fetches reference list for a given DOI from the CrossRef API.
+Fetches a comprehensive set of metadata for a given DOI from the CrossRef API.
+The function parses the JSON response to extract main article details,
+author information, and the full reference list.
 }
 \details{
-Uses CrossRef REST API to retrieve structured reference data. This is more
-reliable than text parsing when DOI is available. The mailto parameter
-identifies your application to CrossRef and may result in better service.
+This function accesses the CrossRef REST API to retrieve structured metadata.
+It handles nested information like authors and references by parsing them into
+tidy data frames. Providing a \code{mailto} address in the user-agent is a best
+practice for API interaction.
 }
 \examples{
 \dontrun{
-refs <- get_crossref_references(
-  "10.1016/j.joi.2017.08.007",
-  mailto = "your@email.com"
+metadata <- get_crossref_references(
+  "10.1007/s11192-016-1948-8",
+  mailto = "your.email@example.com",
+  output = 'all'
 )
-head(refs)
+
+# View main article metadata
+print(metadata$main_metadata)
+
+# View author information
+head(metadata$authors)
+
+# View reference list
+head(metadata$references)
 }
 
 }
