@@ -677,10 +677,10 @@ analyze_scientific_content <- function(text,
           dplyr::mutate(
             ref_id = paste0("REF_", row_number()),
             ref_full_text = paste(
-              ifelse(!is.na(author), author, ""),
-              ifelse(!is.na(year), paste0("(", year, ")"), ""),
-              ifelse(!is.na(article_title), article_title, ""),
-              ifelse(!is.na(journal), journal, ""),
+              ifelse(!is.na(author), paste0(author,","), ""),
+              ifelse(!is.na(year), paste0("(", year, "),"), ""),
+              ifelse(!is.na(article_title), paste0(article_title,"."), ""),
+              ifelse(!is.na(journal), paste0(journal,"."), ""),
               sep = " "
             ) %>%  stringr::str_trim() %>%  stringr::str_squish(),
             ref_first_author = stringr::str_extract(author, "^[A-Za-z'-]+") %>%  stringr::str_to_title(),
@@ -690,9 +690,11 @@ analyze_scientific_content <- function(text,
             n_authors = 1
           ) %>%
           dplyr::select(ref_id, ref_full_text, ref_authors, ref_year,
-                        ref_first_author, ref_first_author_normalized, n_authors) %>%
-          mutate(ref_source = "crossref")
-
+                        ref_first_author, ref_first_author_normalized, n_authors, doi) %>%
+          mutate(ref_source = "crossref",
+                 ref_full_text = ifelse(stringr::str_sub(ref_full_text, -1) == ",",
+                 paste0(stringr::str_sub(ref_full_text, 1, -2), "."),ref_full_text)
+                 )
         message(paste("Successfully retrieved", nrow(parsed_references), "references from CrossRef"))
       }
     }, error = function(e) {
@@ -703,7 +705,8 @@ analyze_scientific_content <- function(text,
   if (is.null(parsed_references) && !is.null(references_section) && references_section != "") {
     message("Parsing references from text...")
     parsed_references <- parse_references_section(references_section) %>%
-      mutate(ref_source = "parsed")
+      mutate(ref_source = "parsed",
+             doi = NA_character_)
   }
 
   if (!is.null(parsed_references) && nrow(parsed_references) > 0 &&
