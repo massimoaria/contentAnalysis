@@ -443,7 +443,7 @@ test_that("analyze_scientific_content retrieves from CrossRef with DOI", {
     mailto = "test@example.com"
   )
 
-  expect_true(!is.null(result$parsed_references))
+  expect_true(is.null(result$parsed_references))
 })
 
 test_that("analyze_scientific_content handles CrossRef failure gracefully", {

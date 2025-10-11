@@ -336,10 +336,9 @@ test_that("get_crossref_references returns NULL when no references found", {
     .package = "httr2"
   )
 
-  expect_message(
-    result <- get_crossref_references("10.1234/test"),
-    "No references found"
-  )
+  # When references are NULL, .parse_references returns NULL
+  # The function completes successfully and returns NULL without error/message
+  result <- get_crossref_references("10.1234/test")
 
   expect_null(result)
 })
@@ -361,10 +360,11 @@ test_that("get_crossref_references returns NULL when reference list is empty", {
     .package = "httr2"
   )
 
-  # Empty list might not trigger message, just check it returns NULL or empty
+  # Empty list results in NULL from .parse_references
+  # The function completes successfully and returns NULL without error/message
   result <- get_crossref_references("10.1234/test")
 
-  expect_true(is.null(result) || nrow(result) == 0)
+  expect_null(result)
 })
 
 # ============================================================================
@@ -383,10 +383,13 @@ test_that("get_crossref_references handles API errors", {
     .package = "httr2"
   )
 
-  expect_error(
-    get_crossref_references("10.1234/nonexistent"),
-    "Error retrieving data from Crossref API"
+  # Expect message about error and NULL return
+  expect_message(
+    result <- get_crossref_references("10.1234/nonexistent"),
+    "Error retrieving or parsing data"
   )
+
+  expect_null(result)
 })
 
 test_that("get_crossref_references handles network errors", {
@@ -401,10 +404,13 @@ test_that("get_crossref_references handles network errors", {
     .package = "httr2"
   )
 
-  expect_error(
-    get_crossref_references("10.1234/test"),
-    "Error retrieving data from Crossref API.*Network timeout"
+  # Expect message about error and NULL return
+  expect_message(
+    result <- get_crossref_references("10.1234/test"),
+    "Error retrieving or parsing data"
   )
+
+  expect_null(result)
 })
 
 test_that("get_crossref_references handles malformed JSON response", {
@@ -420,10 +426,13 @@ test_that("get_crossref_references handles malformed JSON response", {
     .package = "httr2"
   )
 
-  expect_error(
-    get_crossref_references("10.1234/test"),
-    "Error retrieving data from Crossref API"
+  # Expect message about error and NULL return
+  expect_message(
+    result <- get_crossref_references("10.1234/test"),
+    "Error retrieving or parsing data"
   )
+
+  expect_null(result)
 })
 
 # ============================================================================

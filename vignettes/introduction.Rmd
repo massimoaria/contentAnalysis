@@ -95,12 +95,6 @@ The analysis object contains multiple components:
 
 ```{r results-structure}
 names(analysis)
-#> [1] "text_analytics"              "citations"                  
-#> [3] "citation_contexts"           "citation_metrics"           
-#> [5] "citation_references_mapping" "parsed_references"          
-#> [7] "word_frequencies"            "ngrams"                     
-#> [9] "network_data"                "section_colors"
-#> [11] "summary"
 ```
 
 ### Summary Statistics
@@ -409,6 +403,7 @@ custom_stops <- c("however", "therefore", "thus", "moreover")
 
 analysis_custom <- analyze_scientific_content(
   text = doc,
+  doi = "10.1016/j.mlwa.2021.100094",
   custom_stopwords = custom_stops,
   remove_stopwords = TRUE
 )

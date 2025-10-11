@@ -176,6 +176,7 @@ map_citations_to_segments <- function(citations_df,
 #' @importFrom dplyr mutate select filter bind_rows arrange desc left_join count rowwise ungroup slice_head rename
 #' @importFrom stringr str_replace_all str_trim str_locate_all str_sub str_detect str_extract str_split str_extract_all str_length str_count str_remove str_squish str_to_title str_to_lower
 #' @importFrom tidytext unnest_tokens
+#' @importFrom openalexR oa_fetch
 analyze_scientific_content <- function(text,
                                        doi = NULL,
                                        mailto = NULL,
@@ -660,6 +661,7 @@ analyze_scientific_content <- function(text,
   # Citation-reference mapping
   citation_references_mapping <- NULL
   parsed_references <- NULL
+  references_oa <- NULL
   if (is.null(mailto)) {
     mailto <- Sys.getenv("CROSSREF_MAILTO")
     if (mailto == "") {
@@ -676,7 +678,7 @@ analyze_scientific_content <- function(text,
         parsed_references <- refs_crossref %>%
           dplyr::mutate(
             ref_id = paste0("REF_", row_number()),
-            ref_full_text = ref_full,
+            ref_full_text = ifelse(!is.na(ref_full), ref_full, NA_character_),
             ref_full_text2 = paste(
               ifelse(!is.na(author), paste0(author,","), ""),
               ifelse(!is.na(year), paste0("(", year, "),"), ""),
@@ -684,19 +686,40 @@ analyze_scientific_content <- function(text,
               ifelse(!is.na(journal), paste0(journal,"."), ""),
               sep = " "
             ) %>%  stringr::str_trim() %>%  stringr::str_squish(),
-            ref_first_author = stringr::str_extract(author, "^[A-Za-z'-]+") %>%  stringr::str_to_title(),
+            ref_first_author = stringr::str_remove_all(author, "\\b[A-Z]+\\b\\s*") |> str_trim() %>%  stringr::str_to_title(),
             ref_first_author_normalized = stringr::str_to_lower(ref_first_author),
             ref_year = as.character(year),
             ref_authors = author,
-            n_authors = 1
+            ref_journal = journal,
+            ref_source = "crossref",
+            n_authors = NA_integer_
           ) %>%
-          dplyr::select(ref_id, ref_full_text, ref_authors, ref_year,
-                        ref_first_author, ref_first_author_normalized, n_authors, doi, ref_full_text2) %>%
-          mutate(ref_source = "crossref",
-                 ref_full_text = ifelse(stringr::str_sub(ref_full_text, -1) == ",",
-                 paste0(stringr::str_sub(ref_full_text, 1, -2), "."),ref_full_text)
-                 )
-        message(paste("Successfully retrieved", nrow(parsed_references), "references from CrossRef"))
+          dplyr::select(ref_id, ref_full_text, ref_authors, ref_year, ref_journal,
+                        ref_first_author, ref_first_author_normalized, n_authors, doi, ref_full_text2, ref_source)
+          string_authors <- str_extract(parsed_references$ref_full_text, ".*?(?=\\s*\\()")
+          parsed_references$n_authors <- as.integer((str_count(string_authors, ",") + 1) / 2)
+
+          message(paste("Successfully retrieved", nrow(parsed_references), "references from CrossRef"))
+
+          # download metadata from openalex
+          dois <- parsed_references$doi[!is.na(parsed_references$doi)]
+          dois <- unique(dois)
+          dois <- tolower(trimws(dois[dois != ""]))
+
+          message(paste("Fetching Open Access metadata for", length(dois), "DOIs from OpenAlex..."))
+
+          if (!is.null(dois) && length(dois) > 0){
+            references_oa <- safe_oa_fetch(
+              entity = "works",
+              doi = dois
+            )
+          }
+
+          if (!is.null(references_oa)) {
+            references_oa <- add_reference_info(references_oa)
+            parsed_references <- complete_references_from_oa(parsed_references, references_oa)
+            message(paste("Successfully retrieved metadata for", nrow(references_oa), "references from OpenAlex"))
+            }
       }
     }, error = function(e) {
       warning(paste("Failed to retrieve from CrossRef:", e$message))
@@ -746,6 +769,7 @@ analyze_scientific_content <- function(text,
   results$word_frequencies <- word_frequencies
   results$ngrams <- ngrams_results
   results$network_data <- citation_cooccurrence
+  results$references_oa <- references_oa
 
   # Handle section colors safely - check if citation_contexts has data and section column
   if (nrow(citation_contexts) > 0 && "section" %in% names(citation_contexts)) {
@@ -797,4 +821,269 @@ colorlist <- function() {
     "#6A3D9A", "#B15928", "#8DD3C7", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462", "#B3DE69",
     "#D9D9D9", "#BC80BD", "#CCEBC5"
   )
+}
+
+safe_oa_fetch <- function(entity,
+         identifier = NULL,
+         doi = NULL,
+         attempt = 1,
+         sleep_time = 1,
+         retry_delay = 2,
+         max_retries = 3,
+         verbose = FALSE) {
+
+  if (attempt > 1 && verbose) {
+    cat("Retry attempt", attempt, "of", max_retries, "\n")
+  }
+
+  # Add delay before API call (except for first attempt)
+  if (attempt > 1 || entity == "authors") {
+    wait_time <- if (attempt == 1) sleep_time else retry_delay * (2 ^ (attempt - 2))
+    if (verbose) cat("Waiting", round(wait_time, 2), "seconds before API call...\n")
+    Sys.sleep(wait_time)
+  }
+
+  result <- tryCatch({
+    if (!is.null(identifier)) {
+      openalexR::oa_fetch(
+        entity = entity,
+        identifier = identifier,
+        output = "tibble"
+      )
+    } else if (!is.null(doi)) {
+      openalexR::oa_fetch(
+        entity = entity,
+        doi = doi,
+        output = "tibble"
+      )
+    }
+  }, error = function(e) {
+    error_msg <- as.character(e$message)
+
+    # Check if it's a rate limit error (429)
+    if (grepl("429", error_msg) || grepl("Too Many Requests", error_msg, ignore.case = TRUE)) {
+      if (attempt < max_retries) {
+        if (verbose) {
+          cat("Rate limit hit (HTTP 429). Retrying with exponential backoff...\n")
+        }
+        return(safe_oa_fetch(entity, identifier, doi, attempt + 1,
+                             sleep_time, retry_delay, max_retries, verbose))
+      } else {
+        stop("Rate limit exceeded after ", max_retries, " attempts. ",
+             "Please wait a few minutes or set an OpenAlex API key for higher rate limits. ",
+             "Get a free key at: https://openalex.org/")
+      }
+    }
+
+    # Check for other temporary errors
+    if (grepl("500|502|503|504", error_msg) || grepl("timeout", error_msg, ignore.case = TRUE)) {
+      if (attempt < max_retries) {
+        if (verbose) {
+          cat("Temporary server error. Retrying...\n")
+        }
+        return(safe_oa_fetch(entity, identifier, doi, attempt + 1,
+                             sleep_time, retry_delay, max_retries, verbose))
+      }
+    }
+
+    # If not a retryable error, or max retries reached, throw the error
+    stop(e$message)
+  })
+
+  return(result)
+}
+
+add_reference_info <- function(df) {
+
+  # Funzione helper per estrarre l'iniziale del nome
+  get_initial <- function(full_name) {
+    # Rimuove il cognome (ultima parola) e prende l'iniziale delle altre parole
+    parts <- strsplit(full_name, " ")[[1]]
+    if (length(parts) <= 1) {
+      return("")
+    }
+    # Prende tutte le parole tranne l'ultima (cognome)
+    first_names <- parts[-length(parts)]
+    # Estrae le iniziali
+    initials <- sapply(first_names, function(x) substr(x, 1, 1))
+    return(paste0(initials, collapse = "."))
+  }
+
+  # Funzione helper per estrarre il cognome
+  get_surname <- function(full_name) {
+    parts <- strsplit(full_name, " ")[[1]]
+    return(parts[length(parts)])
+  }
+
+  # Funzione helper per creare la stringa degli autori
+  create_authors_string <- function(authorships) {
+    if (is.null(authorships) || nrow(authorships) == 0) {
+      return("Unknown")
+    }
+
+    authors <- authorships$display_name
+    n_authors <- length(authors)
+
+    # Formatta ogni autore come "Surname, I."
+    formatted_authors <- sapply(authors, function(author) {
+      surname <- get_surname(author)
+      initial <- get_initial(author)
+      if (initial != "") {
+        return(paste0(surname, ", ", initial, "."))
+      } else {
+        return(surname)
+      }
+    })
+
+    # Concatena gli autori con virgole
+    return(paste(formatted_authors, collapse = ", "))
+  }
+
+  # Funzione helper per contare gli autori
+  count_authors <- function(authorships) {
+    if (is.null(authorships) || nrow(authorships) == 0) {
+      return(0)
+    }
+    return(nrow(authorships))
+  }
+
+  # Aggiunge la colonna n_authors
+  df$n_authors <- sapply(df$authorships, count_authors)
+
+  # Aggiunge la colonna ref_full_name
+  df$ref_full_name <- mapply(
+    function(authorships, year, title, source) {
+      authors_str <- create_authors_string(authorships)
+
+      # Gestisce valori mancanti
+      year_str <- ifelse(is.na(year), "n.d.", as.character(year))
+      title_str <- ifelse(is.na(title) || title == "", "Untitled", title)
+      source_str <- ifelse(is.na(source) || source == "", "Unknown source", source)
+
+      # Crea la reference completa
+      paste0(authors_str, " (", year_str, ") ", title_str, ", ", source_str, ".")
+    },
+    df$authorships,
+    df$publication_year,
+    df$title,
+    df$source_display_name,
+    SIMPLIFY = TRUE
+  )
+
+  return(df)
+}
+
+complete_references_from_oa <- function(references, references_oa) {
+
+  # Funzione helper per estrarre il cognome
+  get_surname <- function(full_name) {
+    if (is.na(full_name) || full_name == "") return(NA)
+    parts <- strsplit(full_name, " ")[[1]]
+    return(parts[length(parts)])
+  }
+
+  # Funzione helper per estrarre l'iniziale del nome
+  get_initial <- function(full_name) {
+    if (is.na(full_name) || full_name == "") return("")
+    parts <- strsplit(full_name, " ")[[1]]
+    if (length(parts) <= 1) return("")
+    first_names <- parts[-length(parts)]
+    initials <- sapply(first_names, function(x) substr(x, 1, 1))
+    return(paste0(initials, collapse = "."))
+  }
+
+  # Funzione helper per formattare gli autori
+  format_authors <- function(authorships) {
+    if (is.null(authorships) || nrow(authorships) == 0) {
+      return(NA)
+    }
+
+    authors <- authorships$display_name
+    formatted_authors <- sapply(authors, function(author) {
+      surname <- get_surname(author)
+      initial <- get_initial(author)
+      if (!is.na(initial) && initial != "") {
+        return(paste0(surname, ", ", initial, "."))
+      } else {
+        return(surname)
+      }
+    })
+
+    return(paste(formatted_authors, collapse = ", "))
+  }
+
+  # Funzione helper per estrarre il primo autore
+  get_first_author <- function(authorships) {
+    if (is.null(authorships) || nrow(authorships) == 0) {
+      return(NA)
+    }
+    return(get_surname(authorships$display_name[1]))
+  }
+
+  # Normalizza i DOI per il matching (rimuove spazi, converte in minuscolo)
+  references$doi_clean <- tolower(trimws(gsub("https://doi.org/","",references$doi)))
+  references_oa$doi_clean <- tolower(trimws(gsub("https://doi.org/","",references_oa$doi)))
+
+  # Loop attraverso ogni riga di references
+  for (i in 1:nrow(references)) {
+    doi_ref <- references$doi_clean[i]
+
+    if (is.na(doi_ref) || doi_ref == "") next
+
+    # Trova la corrispondenza in references_oa
+    match_idx <- which(references_oa$doi_clean == doi_ref)
+
+    if (length(match_idx) > 0) {
+      match_idx <- match_idx[1]  # Prende la prima corrispondenza
+
+      # Completa ref_full_text se NA
+      if (is.na(references$ref_full_text[i])) {
+        references$ref_full_text[i] <- references_oa$ref_full_name[match_idx]
+      }
+
+      # Completa ref_authors se NA
+      if (is.na(references$ref_authors[i]) || references$ref_authors[i] == "") {
+        references$ref_authors[i] <- format_authors(
+          references_oa$authorships[[match_idx]]
+        )
+      }
+
+      # Completa ref_year se NA
+      if (is.na(references$ref_year[i]) || references$ref_year[i] == "") {
+        references$ref_year[i] <- as.character(
+          references_oa$publication_year[match_idx]
+        )
+      }
+
+      # Completa ref_journal se NA
+      if (is.na(references$ref_journal[i]) || references$ref_journal[i] == "") {
+        references$ref_journal[i] <- references_oa$source_display_name[match_idx]
+      }
+
+      # Completa ref_first_author se NA
+      if (is.na(references$ref_first_author[i]) || references$ref_first_author[i] == "") {
+        references$ref_first_author[i] <- get_first_author(
+          references_oa$authorships[[match_idx]]
+        )
+      }
+
+      # Completa ref_first_author_normalized se NA
+      if (is.na(references$ref_first_author_normalized[i]) ||
+          references$ref_first_author_normalized[i] == "") {
+        first_auth <- get_first_author(references_oa$authorships[[match_idx]])
+        if (!is.na(first_auth)) {
+          references$ref_first_author_normalized[i] <- tolower(trimws(first_auth))
+        }
+      }
+
+      # Completa n_authors se NA
+      if (is.na(references$n_authors[i])) {
+        references$n_authors[i] <- references_oa$n_authors[match_idx]
+      }
+    }
+  }
+
+  references$doi_clean <- NULL
+
+  return(references)
 }
