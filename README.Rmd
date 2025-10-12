@@ -2,6 +2,7 @@
 output: github_document
 always_allow_html: true
 ---
+
 ```{r, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
@@ -12,34 +13,116 @@ knitr::opts_chunk$set(
 
 # contentanalysis
 
-<!-- badges: start -->
-<!-- badges: end -->
 
-`contentanalysis` provides comprehensive tools for extracting and analyzing scientific content from PDF documents, including citation extraction, reference matching, text analysis, network visualization, and bibliometric indicators.
+  ## Overview
 
-## Features
+  `contentanalysis` is a comprehensive R package designed for in-depth analysis of scientific literature. It bridges the gap between raw PDF documents and structured, analyzable data by combining advanced text extraction, citation analysis, and bibliometric enrichment from external databases.
 
-- **PDF Import**: Multi-column layout support with structure preservation
-- **Citation Extraction**: Comprehensive detection of citation formats (numbered, author-year, narrative, parenthetical)
-- **Reference Parsing**: Extract references from text or CrossRef API
-- **Citation-Reference Matching**: Automatic matching with multiple disambiguation strategies
-- **Citation Network**: Interactive network visualization of citation co-occurrences
-- **Text Analysis**: Word frequencies, n-grams, lexical diversity, readability metrics
-- **Citation Context**: Extract surrounding text for each citation
-- **Bibliometric Indicators**: Citation density, distribution by section, co-occurrence analysis
-- **Word Distribution**: Track word frequencies across document sections
+### What Makes It Unique?
+
+The package goes beyond simple PDF parsing by creating a multi-layered analytical framework:
+
+  1. **Intelligent PDF Processing**: Extracts text from multi-column PDFs while preserving document structure (sections, paragraphs, references)
+
+2. **Citation Intelligence**: Detects and extracts citations in multiple formats (numbered, author-year, narrative, parenthetical) and maps them to their precise locations in the document
+
+3. **Bibliometric Enrichment**: Automatically retrieves and integrates metadata from external sources:
+  - **CrossRef API**: Retrieves structured reference data including authors, publication years, journals, and DOIs
+- **OpenAlex**: Enriches references with additional metadata, filling gaps and providing comprehensive bibliographic information
+
+4. **Citation-Reference Linking**: Implements sophisticated matching algorithms to connect in-text citations with their corresponding references, handling various citation styles and ambiguous cases
+
+5. **Context-Aware Analysis**: Extracts the textual context surrounding each citation, enabling semantic analysis of how references are used throughout the document
+
+6. **Network Visualization**: Creates interactive networks showing citation co-occurrence patterns and conceptual relationships within the document
+
+### The Complete Workflow
+
+```
+PDF Document → Text Extraction → Citation Detection → Reference Parsing
+↓
+CrossRef/OpenAlex APIs
+↓
+Citation-Reference Matching → Enriched Dataset
+↓
+Network Analysis + Text Analytics + Bibliometric Indicators
+```
+
+The result is a rich, structured dataset that transforms a static PDF into an analyzable knowledge object, ready for:
+  - **Content analysis**: Understanding what concepts and methods are discussed
+- **Citation analysis**: Examining how knowledge is constructed and referenced
+- **Temporal analysis**: Tracking the evolution of ideas through citation patterns
+- **Network analysis**: Visualizing intellectual connections
+- **Readability assessment**: Evaluating text complexity and accessibility
+
+## Key Features
+
+### PDF Import & Text Extraction
+- Multi-column layout support with automatic section detection
+- Structure preservation (title, abstract, introduction, methods, results, discussion, references)
+- Handling of complex layouts and special characters
+- DOI extraction from PDF metadata
+
+### Citation Extraction & Analysis
+- Comprehensive detection of citation formats:
+  - **Numbered citations**: `[1]`, `[1-3]`, `[1,5,7]`
+- **Author-year citations**: `(Smith, 2020)`, `(Smith et al., 2020)`
+- **Narrative citations**: `Smith (2020) demonstrated...`
+- **Complex citations**: `(see Smith, 2020; Jones et al., 2021)`
+- Citation context extraction (surrounding text analysis)
+- Citation positioning and density metrics
+- Section-wise citation distribution
+
+### Reference Management & Enrichment
+- **Local parsing**: Extract references from the document's reference section
+- **CrossRef integration**: Retrieve structured metadata for cited works via DOI
+- **OpenAlex integration**: Enrich references with additional bibliographic data
+- Automatic gap-filling: Complete missing author names, years, journal names
+- Structured reference format: Standardized author lists, publication years, journals
+
+### Citation-Reference Matching
+- Intelligent matching algorithms with multiple confidence levels:
+  - **High confidence**: Exact author-year matches
+  - **Medium confidence**: Fuzzy matching for variant author names
+  - **Disambiguation**: Handles multiple works by the same author
+- Support for various citation styles (APA, Chicago, Vancouver, etc.)
+- Handles complex cases: multiple authors, "et al.", year suffixes (2020a, 2020b)
+
+### Network Analysis
+- Interactive citation co-occurrence networks
+- Distance-based edge weighting (closer citations = stronger connections)
+- Section-aware visualization (color-coded by document section)
+- Multi-section citation detection (citations appearing in multiple sections)
+- Network statistics: centrality, clustering, community detection potential
+
+### Text Analysis
+- Word frequency analysis with stopword removal
+- N-gram extraction (bigrams, trigrams)
+- Lexical diversity metrics
+- Readability indices (Flesch, Gunning Fog, SMOG, Coleman-Liau)
+- Word distribution tracking across document sections
+- Methodological term tracking
+
+### Bibliometric Indicators
+- Citation density (citations per 1000 words)
+- Citation type distribution (narrative vs. parenthetical)
+- Co-citation analysis
+- Reference age distribution
+- Journal diversity metrics
 
 ## Installation
 
 You can install the development version from GitHub:
+
 ```r
 # install.packages("devtools")
-devtools::install_github("masismo/contentanalysis")
+devtools::install_github("massimoaria/contentanalysis")
 ```
 
 ## Example
 
 Complete workflow analyzing a real scientific paper:
+
 ```{r}
 library(contentanalysis)
 ```
@@ -52,8 +135,9 @@ download.file(paper_url, destfile = "example_paper.pdf", mode = "wb")
 ```
 
 ### Import PDF with automatic section detection
+
 ```{r}
-doc <- pdf2txt_auto("example_paper.pdf", 
+doc <- pdf2txt_auto("example_paper.pdf",
                     n_columns = 2,
                     citation_type = "author_year")
 
@@ -61,8 +145,8 @@ doc <- pdf2txt_auto("example_paper.pdf",
 names(doc)
 ```
 
+### Perform comprehensive content analysis with CrossRef and OpenAlex enrichment
 
-### Perform comprehensive content analysis with CrossRef
 ```{r}
 analysis <- analyze_scientific_content(
   text = doc,
@@ -72,25 +156,35 @@ analysis <- analyze_scientific_content(
 )
 ```
 
-### View summary statistics
-```{r}
+This single function call:
 
+1. Extracts all citations from the document
+2. Retrieves reference metadata from CrossRef using the paper's DOI
+3. Enriches references with additional data from OpenAlex
+4. Matches citations to references with confidence scoring
+5. Performs text analysis and computes bibliometric indicators
+
+### View summary statistics
+
+```{r}
 analysis$summary
 ```
 
-
 ### Readability indices
+
 ```{r}
 readability <- calculate_readability_indices(doc$Full_text, detailed = TRUE)
 readability
 ```
 
 ### Examine citations by type
+
 ```{r}
 analysis$citation_metrics$type_distribution
 ```
 
 ### Analyze citation contexts
+
 ```{r}
 head(analysis$citation_contexts[, c("citation_text_clean", "section", "full_context")])
 ```
@@ -113,6 +207,7 @@ network
 ```
 
 ### Access network statistics
+
 ```{r}
 stats <- attr(network, "stats")
 
@@ -134,14 +229,14 @@ if (nrow(stats$multi_section_citations) > 0) {
 
 The citation network visualization includes:
 
-- **Node size**: Proportional to number of connections
+  - **Node size**: Proportional to number of connections
 - **Node color**: Indicates the primary section where citations appear
 - **Node border**: Thicker border (3px) for citations appearing in multiple sections
 - **Edge thickness**: Decreases with distance (closer citations = thicker edges)
-- **Edge color**: 
+- **Edge color**:
   - Red: Very close citations (≤300 characters)
-  - Blue: Moderate distance (≤600 characters)
-  - Gray: Distant citations (>600 characters)
+- Blue: Moderate distance (≤600 characters)
+- Gray: Distant citations (>600 characters)
 - **Interactive features**: Zoom, pan, drag nodes, highlight neighbors on hover
 
 ### Customizing the Network
@@ -171,41 +266,104 @@ network_clean <- create_citation_network(
 ## Text Analysis
 
 ### Track methodological terms across sections
+
 ```{r}
 method_terms <- c("machine learning", "regression", "validation", "dataset")
 word_dist <- calculate_word_distribution(doc, method_terms)
 ```
 
 ### Create interactive visualization
-```{r eval=FALSE, include=FALSE}
-plot_word_distribution(word_dist, plot_type = "line", show_points = TRUE)
+
+```{r eval=TRUE}
+# Create and save the plot
+p <- plot_word_distribution(word_dist, plot_type = "line", smooth = TRUE, ,show_points = TRUE)
+
+# Save as static image for GitHub
+if (!dir.exists("man/figures")) dir.create("man/figures", recursive = TRUE)
+htmlwidgets::saveWidget(p, "temp_plot.html", selfcontained = TRUE)
+webshot::webshot("temp_plot.html", "man/figures/README-word-distribution.png", 
+                 vwidth = 1000, vheight = 600)
+file.remove("temp_plot.html")
 ```
 
+```{r echo=FALSE, out.width="100%"}
+knitr::include_graphics("man/figures/README-word-distribution.png")
+```
+
+
 ### Examine most frequent words
+
 ```{r}
 head(analysis$word_frequencies, 10)
 ```
 
 ### Citation co-occurrence data
+
 ```{r}
 head(analysis$network_data)
 ```
 
-## Working with references
+## Working with References
+
+### Exploring enriched reference data
+
 ```{r}
-# View parsed references
-head(analysis$parsed_references[, c("ref_first_author", "ref_year", "ref_full_text")])
+# View parsed references (enriched with CrossRef and OpenAlex)
+head(analysis$parsed_references[, c("ref_first_author", "ref_year", "ref_journal", "ref_source")])
 
-# Find citations to specific author
+# Check data sources
+table(analysis$parsed_references$ref_source)
+```
+
+The `ref_source` column indicates where the data came from:
+
+  - `"crossref"`: Retrieved from CrossRef API
+- `"parsed"`: Extracted from document's reference section
+- References may be enriched with OpenAlex data even if originally from CrossRef
+
+### Analyzing citation-reference links
+
+```{r}
+# View citation-reference matches with confidence levels
 library(dplyr)
-analysis$citation_references_mapping %>%
-  filter(grepl("Smith", ref_authors, ignore.case = TRUE))
+head(analysis$citation_references_mapping[, c("citation_text_clean", "ref_authors",
+                                               "ref_year", "match_confidence")])
 
-# Citations by section
+# Match quality distribution
+table(analysis$citation_references_mapping$match_confidence)
+```
+
+### Finding citations to specific authors
+
+```{r}
+# Find all citations to works by Smith
+analysis$citation_references_mapping %>%
+  filter(grepl("Smith", ref_authors, ignore.case = TRUE)) %>%
+  select(citation_text_clean, ref_full_text, match_confidence)
+```
+
+### Accessing OpenAlex metadata
+
+```{r}
+# If OpenAlex data was retrieved
+if (!is.null(analysis$references_oa)) {
+  # View enriched metadata
+  head(analysis$references_oa[, c("title", "publication_year", "cited_by_count",
+                                   "type", "oa_status")])
+
+  # Analyze citation impact
+  summary(analysis$references_oa$cited_by_count)
+}
+```
+
+### Citations by section
+
+```{r}
 analysis$citation_metrics$section_distribution
 ```
 
-## Advanced: Word distribution analysis
+## Advanced: Word Distribution Analysis
+
 ```{r}
 # Track disease-related terms
 disease_terms <- c("covid", "pandemic", "health", "policy", "vaccination")
@@ -225,37 +383,76 @@ dist %>%
 ### PDF Import
 - `pdf2txt_auto()`: Import PDF with automatic section detection
 - `reconstruct_text_structured()`: Advanced text reconstruction
+- `extract_doi_from_pdf()`: Extract DOI from PDF metadata
 
 ### Content Analysis
-- `analyze_scientific_content()`: Comprehensive content and citation analysis
-- `parse_references_section()`: Parse reference list
-- `match_citations_to_references()`: Match citations to references
+- `analyze_scientific_content()`: Comprehensive content and citation analysis with API enrichment
+- `parse_references_section()`: Parse reference list from text
+- `match_citations_to_references()`: Match citations to references with confidence scoring
+- `get_crossref_references()`: Retrieve references from CrossRef API
 
 ### Network Analysis
 - `create_citation_network()`: Create interactive citation co-occurrence network
 
 ### Text Analysis
-- `calculate_readability_indices()`: Compute readability scores
-- `calculate_word_distribution()`: Track word frequencies across sections
-- `readability_multiple()`: Batch readability analysis
+- `calculate_readability_indices()`: Compute readability scores (Flesch, Gunning Fog, SMOG, Coleman-Liau)
+- `calculate_word_distribution()`: Track word frequencies across document sections
+- `readability_multiple()`: Batch readability analysis for multiple documents
 
 ### Visualization
-- `plot_word_distribution()`: Interactive visualization of word distribution
+- `plot_word_distribution()`: Interactive visualization of word distribution across sections
 
 ### Utilities
 - `get_example_paper()`: Download example paper for testing
-- `extract_doi_from_pdf()`: Extract DOI from PDF metadata
+- `map_citations_to_segments()`: Map citations to document sections/segments
+
+## External Data Sources
+
+### CrossRef API
+
+The package integrates with CrossRef's REST API to retrieve structured bibliographic data:
+
+  - **Endpoint**: `https://api.crossref.org/works/{doi}/references`
+- **Data retrieved**: Authors, publication year, journal/source, article title, DOI
+- **Rate limits**: Polite pool requires email (use `mailto` parameter)
+- **More info**: https://api.crossref.org
+
+### OpenAlex API
+
+OpenAlex provides comprehensive scholarly metadata:
+
+  - **Endpoint**: Via `openalexR` package
+- **Data retrieved**: Complete author lists, citation counts, open access status, institutional affiliations
+- **Rate limits**: 100,000 requests/day (polite pool with email), 10 requests/second
+- **API key**: Optional, increases rate limits. Set with `openalexR::oa_apikey()`
+- **More info**: https://openalex.org
+
+### Setting Up API Access
+
+```r
+# For CrossRef (recommended to avoid rate limits)
+analysis <- analyze_scientific_content(
+  text = doc,
+  doi = "10.xxxx/xxxxx",
+  mailto = "your@email.com"  # Your email for CrossRef polite pool
+)
+
+# For OpenAlex (optional, increases rate limits)
+# Get free API key at: https://openalex.org/
+openalexR::oa_apikey("your-api-key-here")
+```
 
 ## Dependencies
 
-**Core**: pdftools, dplyr, tidyr, stringr, tidytext, tibble, httr2, visNetwork
+**Core**: pdftools, dplyr, tidyr, stringr, tidytext, tibble, httr2, visNetwork, openalexR
 
 **Suggested**: plotly, RColorBrewer, scales (for visualization)
 
 ## Citation
 
 If you use this package in your research, please cite:
-```
+
+  ```
 Massimo Aria (2025). contentanalysis: Scientific Content and Citation Analysis from PDF Documents.
 R package version 0.1.0.
 https://github.com/massimoaria/contentanalysis
@@ -270,3 +467,12 @@ GPL (>= 3)
 Please report issues at: https://github.com/massimoaria/contentanalysis/issues
 
 Contributions are welcome! Please feel free to submit a Pull Request.
+
+## Acknowledgments
+
+This package builds upon the excellent work of:
+
+  - The pdftools team for PDF processing
+- The tidyverse team for data manipulation tools
+- The openalexR developers for OpenAlex API integration
+- CrossRef for providing open bibliographic data
