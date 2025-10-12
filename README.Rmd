@@ -276,7 +276,7 @@ word_dist <- calculate_word_distribution(doc, method_terms)
 
 ```{r eval=TRUE}
 # Create and save the plot
-p <- plot_word_distribution(word_dist, plot_type = "line", smooth = TRUE, ,show_points = TRUE)
+p <- plot_word_distribution(word_dist, plot_type = "line", smooth = TRUE, show_points = TRUE)
 
 # Save as static image for GitHub
 if (!dir.exists("man/figures")) dir.create("man/figures", recursive = TRUE)

@@ -1,5 +1,8 @@
 ---
-title: "Introduction to contentanalysis"
+title: "contentanalysis"
+subtitle: "Comprehensive Analysis of Scientific Papers with Bibliometric Enrichment"
+author: "By Massimo Aria"
+date: "`r Sys.Date()`"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{Introduction to contentanalysis}
@@ -23,11 +26,56 @@ library(contentanalysis)
 library(dplyr)
 ```
 
+
 ## Introduction
 
-The `contentanalysis` package provides comprehensive tools for
-extracting and analyzing scientific content from PDF documents. This
-vignette demonstrates the main features using a real open-access
+The `contentanalysis` package is a comprehensive R toolkit designed for in-depth 
+analysis of scientific literature. It bridges the gap between raw PDF documents 
+and structured, analyzable data by combining advanced text extraction, citation 
+analysis, and bibliometric enrichment from external databases.
+
+### What Makes It Unique?
+
+The package goes beyond simple PDF parsing by creating a multi-layered analytical framework:
+
+1. **Intelligent PDF Processing**: Extracts text from multi-column PDFs while 
+   preserving document structure (sections, paragraphs, references)
+
+2. **Citation Intelligence**: Detects and extracts citations in multiple formats 
+   (numbered, author-year, narrative, parenthetical) and maps them to their 
+   precise locations in the document
+
+3. **Bibliometric Enrichment**: Automatically retrieves and integrates metadata 
+   from external sources:
+   - **CrossRef API**: Retrieves structured reference data including authors, 
+     publication years, journals, and DOIs
+   - **OpenAlex**: Enriches references with additional metadata, filling gaps 
+     and providing comprehensive bibliographic information
+
+4. **Citation-Reference Linking**: Implements sophisticated matching algorithms 
+   to connect in-text citations with their corresponding references, handling 
+   various citation styles and ambiguous cases
+
+5. **Context-Aware Analysis**: Extracts the textual context surrounding each 
+   citation, enabling semantic analysis of how references are used throughout 
+   the document
+
+6. **Network Visualization**: Creates interactive networks showing citation 
+   co-occurrence patterns and conceptual relationships within the document
+
+### The Complete Workflow
+
+```
+PDF Document → Text Extraction → Citation Detection → Reference Parsing
+                                        ↓
+                              CrossRef/OpenAlex APIs
+                                        ↓
+                    Citation-Reference Matching → Enriched Dataset
+                                        ↓
+            Network Analysis + Text Analytics + Bibliometric Indicators
+```
+
+This vignette demonstrates the main features using a real open-access 
 scientific paper.
 
 ## Getting Started
@@ -35,6 +83,16 @@ scientific paper.
 ### Download Example Paper
 
 We'll use an open-access paper on Machine Learning with Applications:
+
+Aria, M., Cuccurullo, C., & Gnasso, A. (2021). **A comparison among interpretative proposals for Random Forests**. *Machine Learning with Applications*, 6, 100094.
+
+The paaper is available at: https://doi.org/10.1016/j.mlwa.2021.100094.
+
+**Abstract**:
+
+The growing success of Machine Learning (ML) is making significant improvements to predictive models, facilitating their integration in various application fields. Despite its growing success, there are some limitations and disadvantages: the most significant is the lack of interpretability that does not allow users to understand how particular decisions are made. Our study focus on one of the best performing and most used models in the Machine Learning framework, the Random Forest model. It is known as an efficient model of ensemble learning, as it ensures high predictive precision, flexibility, and immediacy; it is recognized as an intuitive and understandable approach to the construction process, but it is also considered a Black Box model due to the large number of deep decision trees produced within it.
+
+The aim of this research is twofold. We present a survey about interpretative proposal for Random Forest and then we perform a machine learning experiment providing a comparison between two methodologies, inTrees, and NodeHarvest, that represent the main approaches in the rule extraction framework. The proposed experiment compares methods performance on six real datasets covering different data characteristics: n. of observations, balanced/unbalanced response, the presence of categorical and numerical predictors. This study contributes to picture a review of the methods and tools proposed for ensemble tree interpretation, and identify, in the class of rule extraction approaches, the best proposal.
 
 ```{r download}
 # Download example paper
@@ -61,26 +119,29 @@ Abstract, Introduction, Methods, Results, Discussion, etc.
 
 For papers with specific layouts:
 
-```{r import-manual}
+```{r import-manual, eval=FALSE}
 # Single column
-# doc_single <- pdf2txt_auto("example_paper.pdf", n_columns = 2)
+doc_single <- pdf2txt_auto("example_paper.pdf", n_columns = 1)
 
 # Three columns
-# doc_three <- pdf2txt_auto("example_paper.pdf", n_columns = 3)
+doc_three <- pdf2txt_auto("example_paper.pdf", n_columns = 3)
 
 # Without section splitting
-# text_only <- pdf2txt_auto("example_paper.pdf", sections = FALSE)
+text_only <- pdf2txt_auto("example_paper.pdf", sections = FALSE)
 ```
 
-## Comprehensive Content Analysis
+## Comprehensive Content Analysis with API Enrichment
 
-### Full Analysis with CrossRef Integration
+### Full Analysis with CrossRef and OpenAlex Integration
+
+The `analyze_scientific_content()` function performs a comprehensive analysis
+in a single call, automatically enriching the data with external metadata:
 
 ```{r analysis}
 analysis <- analyze_scientific_content(
   text = doc,
-  doi = "10.1016/j.mlwa.2021.100094",        # Optional but recommended
-  mailto = "your@email.com",                 # Required for CrossRef,
+  doi = "10.1016/j.mlwa.2021.100094",        # Paper's DOI for CrossRef lookup
+  mailto = "your@email.com",                 # Required for CrossRef API
   citation_type = "author_year",             # Citation style  
   window_size = 10,                          # Words around citations
   remove_stopwords = TRUE,
@@ -88,6 +149,16 @@ analysis <- analyze_scientific_content(
   use_sections_for_citations = TRUE
 )
 ```
+
+**What happens behind the scenes:**
+
+1. Extracts all citations from the document text
+2. Retrieves reference metadata from **CrossRef** using the paper's DOI
+3. Enriches references with additional data from **OpenAlex** (citation counts, 
+   open access status, complete author lists)
+4. Matches in-text citations to references with confidence scoring
+5. Performs text analysis and computes bibliometric indicators
+6. Extracts citation contexts and analyzes co-occurrence patterns
 
 ### Understanding the Results
 
@@ -97,15 +168,98 @@ The analysis object contains multiple components:
 names(analysis)
 ```
 
+**Key components:**
+
+- `text_analytics`: Basic statistics and word frequencies
+- `citations`: All extracted citations with metadata
+- `citation_contexts`: Citations with surrounding text
+- `citation_metrics`: Citation type distribution, density
+- `citation_references_mapping`: Matched citations to references
+- `parsed_references`: Structured reference list (enriched with API data)
+- `references_oa`: OpenAlex metadata for references
+- `word_frequencies`: Word frequency table
+- `ngrams`: N-gram frequency tables
+- `network_data`: Citation co-occurrence data
+
 ### Summary Statistics
 
 ```{r summary}
 analysis$summary
 ```
 
-Key metrics include: - Total words analyzed - Number of citations
-extracted - Citation types (narrative vs. parenthetical) - Number of
-references matched - Lexical diversity - Citation density per 1000 words
+Key metrics include:
+
+- Total words analyzed
+- Number of citations extracted (by type)
+- Number of references parsed from CrossRef/OpenAlex
+- Citations successfully matched to references
+- Match quality distribution
+- Lexical diversity
+- Citation density per 1000 words
+
+## Working with Enriched Reference Data
+
+### Exploring Reference Sources
+
+```{r reference-sources}
+# View enriched references
+head(analysis$parsed_references[, c("ref_first_author", "ref_year", 
+                                     "ref_journal", "ref_source")])
+
+# Check data sources
+table(analysis$parsed_references$ref_source)
+```
+
+The `ref_source` column indicates where the data originated:
+
+- `"crossref"`: Retrieved from CrossRef API
+- `"parsed"`: Extracted from document's reference section
+- References may be further enriched with OpenAlex data
+
+### Accessing OpenAlex Metadata
+
+If OpenAlex data was successfully retrieved, you can access additional metrics:
+
+```{r openalex-data}
+# Check if OpenAlex data is available
+if (!is.null(analysis$references_oa)) {
+  # View enriched metadata
+  head(analysis$references_oa[, c("title", "publication_year", "cited_by_count", 
+                                   "type", "is_oa")])
+  
+  # Analyze citation impact
+  cat("Citation impact statistics:\n")
+  print(summary(analysis$references_oa$cited_by_count))
+  
+  # Open access status
+  if ("is_oa" %in% names(analysis$references_oa)) {
+    oa_count <- sum(analysis$references_oa$is_oa, na.rm = TRUE)
+    cat("\nOpen Access references:", oa_count, "out of", 
+        nrow(analysis$references_oa), "\n")
+  }
+}
+```
+
+### Citation-Reference Matching Quality
+
+```{r matching-quality}
+# View matching results with confidence levels
+matched <- analysis$citation_references_mapping %>%
+  select(citation_text_clean, cite_author, cite_year, 
+         ref_authors, ref_year, match_confidence)
+
+head(matched)
+
+# Match quality distribution
+cat("Match quality distribution:\n")
+print(table(matched$match_confidence))
+
+# High-confidence matches
+high_conf <- matched %>%
+  filter(match_confidence %in% c("high", "high_second_author"))
+cat("\nHigh-confidence matches:", nrow(high_conf), "out of", 
+    nrow(matched), "\n")
+```
 
 ## Citation Analysis
 
@@ -124,34 +278,46 @@ table(analysis$citations$citation_type)
 analysis$citation_metrics$section_distribution
 ```
 
+### Citation Type Analysis
+
+```{r citation-types}
+# Narrative vs. parenthetical
+analysis$citation_metrics$narrative_ratio
+
+# Citation density
+cat("Citation density:", 
+    analysis$citation_metrics$density$citations_per_1000_words,
+    "citations per 1000 words\n")
+```
+
 ### Citation Contexts
 
 Extract the text surrounding each citation:
 
 ```{r contexts}
-# View citation contexts
+# View citation contexts with matched references
 contexts <- analysis$citation_contexts %>%
-  select(citation_text_clean, section, words_before, words_after)
+  select(citation_text_clean, section, ref_full_text, 
+         full_context, match_confidence)
 
 head(contexts)
 
-# Find citations in Introduction
+# Find citations in specific section
 intro_citations <- analysis$citation_contexts %>%
   filter(section == "Introduction")
 
-nrow(intro_citations)
+cat("Citations in Introduction:", nrow(intro_citations), "\n")
 ```
 
 ## Citation Network Visualization
 
-The package can create interactive network visualizations showing how citations
+The package creates interactive network visualizations showing how citations
 co-occur within your document. Citations that appear close together are 
-connected, with the visualization providing insights into citation patterns
-and relationships.
+connected, revealing citation patterns and relationships.
 
 ### Creating the Network
 
-```{r network-create, fig.width=8, fig.height=5}
+```{r network-create, fig.width=8, fig.height=6}
 # Create interactive citation network
 network <- create_citation_network(
   citation_analysis_results = analysis,
@@ -176,6 +342,7 @@ The network visualization includes several visual elements:
   - Red: Very close citations (≤300 characters)
   - Blue: Moderate distance (≤600 characters)  
   - Gray: Distant citations (>600 characters)
+- **Interactive features**: Zoom, pan, drag nodes, highlight neighbors on hover
 
 ### Network Statistics
 
@@ -209,7 +376,7 @@ print(stats$section_colors)
 
 You can customize the network based on your analysis needs:
 
-```{r network-custom}
+```{r network-custom, eval=FALSE}
 # Focus on very close citations only
 network_close <- create_citation_network(
   analysis,
@@ -268,33 +435,6 @@ close_citations <- network_data %>%
   filter(distance < 100)  # Within 100 characters
 
 cat("Number of very close citation pairs:", nrow(close_citations), "\n")
-```
-
-## Reference Matching
-
-### Automatic Matching
-
-Citations are automatically matched to references:
-
-```{r matching}
-# View matching results
-matched <- analysis$citation_references_mapping %>%
-  select(citation_text_clean, cite_author, cite_year, 
-         ref_full_text, match_confidence)
-
-head(matched)
-
-# Match quality
-table(matched$match_confidence)
-```
-
-### Manual Reference Parsing
-
-If you don't have a DOI or prefer text parsing:
-
-```{r manual-refs}
-refs <- parse_references_section(doc$References)
-head(refs)
 ```
 
 ## Text Analysis
@@ -365,7 +505,7 @@ dist %>%
 
 ### Visualization
 
-```{r plot, fig.width=8, fig.height=5}
+```{r plot, fig.width=8, fig.height=5, eval=TRUE}
 # Interactive plot
 plot_word_distribution(
   dist,
@@ -392,18 +532,35 @@ analysis$citation_references_mapping %>%
 
 # Citations in Discussion section
 analysis$citations %>%
-  filter(section == "Introduction") %>%
-  select(citation_text, citation_type)
+  filter(section == "Discussion") %>%
+  select(citation_text, citation_type, section)
+```
+
+### Analyzing Highly Cited References
+
+If OpenAlex data is available, analyze citation impact:
+
+```{r citation-impact}
+if (!is.null(analysis$references_oa)) {
+  # Top cited references
+  top_cited <- analysis$references_oa %>%
+    arrange(desc(cited_by_count)) %>%
+    select(title, publication_year, cited_by_count, is_oa) %>%
+    head(10)
+  
+  print(top_cited)
+}
 ```
 
 ### Custom Stopwords
 
-```{r custom-stop}
+```{r custom-stop, eval=FALSE}
 custom_stops <- c("however", "therefore", "thus", "moreover")
 
 analysis_custom <- analyze_scientific_content(
   text = doc,
   doi = "10.1016/j.mlwa.2021.100094",
+  mailto = "your@email.com",
   custom_stopwords = custom_stops,
   remove_stopwords = TRUE
 )
@@ -413,7 +570,7 @@ analysis_custom <- analyze_scientific_content(
 
 For documents without clear sections:
 
-```{r segments, fig.height=5, fig.width=8}
+```{r segments, fig.height=5, fig.width=8, eval=FALSE}
 # Divide into 20 equal segments
 dist_segments <- calculate_word_distribution(
   text = doc,
@@ -422,20 +579,76 @@ dist_segments <- calculate_word_distribution(
   n_segments = 20
 )
 
-plot_word_distribution(dist_segments, smooth=TRUE)
+plot_word_distribution(dist_segments, smooth = TRUE)
 ```
+
+## Setting Up External API Access
+
+### CrossRef API
+
+CrossRef provides structured bibliographic data:
+
+```{r crossref-setup, eval=FALSE}
+# Always provide your email for the polite pool
+analysis <- analyze_scientific_content(
+  text = doc,
+  doi = "10.xxxx/xxxxx",
+  mailto = "your@email.com"  # Required for CrossRef polite pool
+)
+```
+
+**CrossRef Features:**
+
+- Retrieves authors, publication year, journal/source, article title, DOI
+- Polite pool requires email (higher rate limits)
+- More info: https://api.crossref.org
+
+### OpenAlex API
+
+OpenAlex provides comprehensive scholarly metadata:
+
+```{r openalex-setup, eval=FALSE}
+# Optional: Set API key for higher rate limits
+# Get free key at: https://openalex.org/
+openalexR::oa_apikey("your-api-key-here")
+
+# Then run your analysis as usual
+analysis <- analyze_scientific_content(
+  text = doc,
+  doi = "10.xxxx/xxxxx",
+  mailto = "your@email.com"
+)
+```
+
+**OpenAlex Features:**
+
+- Complete author lists, citation counts, open access status
+- Institutional affiliations, funding information
+- 100,000 requests/day (polite pool with email)
+- 10 requests/second rate limit
+- More info: https://openalex.org
 
 ## Export Results
 
 ### Save to CSV
 
-```{r export}
+```{r export, eval=FALSE}
 # Export citations
 write.csv(analysis$citations, "citations.csv", row.names = FALSE)
 
-# Export matched references
+# Export matched references with confidence scores
 write.csv(analysis$citation_references_mapping, 
           "matched_citations.csv", row.names = FALSE)
+
+# Export enriched references
+write.csv(analysis$parsed_references, 
+          "enriched_references.csv", row.names = FALSE)
+
+# Export OpenAlex metadata (if available)
+if (!is.null(analysis$references_oa)) {
+  write.csv(analysis$references_oa, 
+            "openalex_metadata.csv", row.names = FALSE)
+}
 
 # Export word frequencies
 write.csv(analysis$word_frequencies, 
@@ -456,7 +669,7 @@ if (!is.null(network)) {
 ## Workflow for Multiple Papers
 
 ```{r batch, eval=FALSE}
-# Process multiple papers
+# Process multiple papers with API enrichment
 papers <- c("paper1.pdf", "paper2.pdf", "paper3.pdf")
 dois <- c("10.xxxx/1", "10.xxxx/2", "10.xxxx/3")
 
@@ -464,7 +677,10 @@ results <- list()
 networks <- list()
 
 for (i in seq_along(papers)) {
+  # Import PDF
   doc <- pdf2txt_auto(papers[i], n_columns = 2)
+  
+  # Analyze with API enrichment
   results[[i]] <- analyze_scientific_content(
     doc, 
     doi = dois[i],
@@ -492,23 +708,50 @@ network_stats <- lapply(networks, function(net) {
 })
 
 do.call(rbind, network_stats)
+
+# Analyze reference sources across papers
+ref_sources <- lapply(results, function(x) {
+  if (!is.null(x$parsed_references)) {
+    table(x$parsed_references$ref_source)
+  }
+})
+names(ref_sources) <- papers
+ref_sources
 ```
 
 ## Conclusion
 
 The `contentanalysis` package provides a complete toolkit for analyzing
-scientific papers:
+scientific papers with bibliometric enrichment:
 
 1.  **Import**: Handle multi-column PDFs with structure preservation
 2.  **Extract**: Detect citations in multiple formats
-3.  **Match**: Link citations to references automatically
-4.  **Analyze**: Word frequencies, n-grams, citation contexts, readability
-5.  **Visualize**: Interactive plots of word distributions and citation networks
-6.  **Network**: Explore citation co-occurrence patterns
+3.  **Enrich**: Retrieve metadata from CrossRef and OpenAlex APIs
+4.  **Match**: Link citations to references automatically with confidence scoring
+5.  **Analyze**: Word frequencies, n-grams, citation contexts, readability
+6.  **Visualize**: Interactive plots of word distributions and citation networks
+7.  **Network**: Explore citation co-occurrence patterns
+
+### Key Advantages
+
+- **Automated enrichment**: No manual reference entry needed
+- **Multiple data sources**: Combines CrossRef and OpenAlex for complete coverage
+- **Intelligent matching**: Handles various citation styles and ambiguous cases
+- **Context-aware**: Extracts and analyzes citation contexts
+- **Interactive visualization**: Dynamic networks and plots
+- **Comprehensive output**: Structured data ready for further analysis
 
 For more information, see the function documentation:
 
-- `?analyze_scientific_content`
-- `?create_citation_network`
-- `?calculate_readability_indices`
-- `?calculate_word_distribution`
+- `?analyze_scientific_content` - Main analysis function with API integration
+- `?create_citation_network` - Interactive citation network visualization
+- `?calculate_readability_indices` - Readability metrics
+- `?calculate_word_distribution` - Word distribution analysis
+- `?get_crossref_references` - CrossRef API wrapper
+- `?parse_references_section` - Local reference parsing
+
+### Additional Resources
+
+- CrossRef API: https://api.crossref.org
+- OpenAlex: https://openalex.org
+- Package repository: https://github.com/massimoaria/contentanalysis
