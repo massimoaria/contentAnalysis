@@ -1,13 +1,21 @@
 Package: contentanalysis
 Title: Scientific Content and Citation Analysis from PDF Documents
 Version: 0.1.0.900
-Authors@R: 
-    person("Massimo", "Aria", , "aria@unina.it", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0002-8517-9411"))
+Authors@R: c(
+    person(given = "Massimo",
+           family = "Aria",
+           role = c("cre", "aut", "cph"),
+           email = "aria@unina.it",
+           comment = c(ORCID = "0000-0002-8517-9411")),
+    person(given = "Corrado", 
+           family = "Cuccurullo", 
+           role = "aut",
+           email = "cuccurullocorrado@gmail.com",
+           comment = c(ORCID = "0000-0002-7401-8575")))
 Description: Provides comprehensive tools for extracting and analyzing scientific 
     content from PDF documents, including citation extraction, reference matching, 
     text analysis, and bibliometric indicators. Supports multi-column PDF layouts,
-    CrossRef API integration, and advanced citation parsing.
+    'CrossRef' API <https://www.crossref.org/documentation/retrieve-metadata/rest-api/> integration, and advanced citation parsing.
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -33,7 +41,7 @@ Suggests:
     stringdist,
     testthat (>= 3.0.0),
     mockery
-URL: https://github.com/massimoaria/contentanalysis, https://github.com/massimoaria/contentAnalysis
-BugReports: https://github.com/massimoaria/contentAnalysis/issues
+URL: https://github.com/massimoaria/contentanalysis
+BugReports: https://github.com/massimoaria/contentanalysis/issues
 VignetteBuilder: knitr
 Config/testthat/edition: 3

@@ -11,11 +11,12 @@
 #'
 #' @export
 #' @importFrom dplyr mutate
-map_citations_to_segments <- function(citations_df,
-                                      text,
-                                      use_sections = "auto",
-                                      n_segments = 10) {
-
+map_citations_to_segments <- function(
+  citations_df,
+  text,
+  use_sections = "auto",
+  n_segments = 10
+) {
   sections_available <- FALSE
   section_names <- character(0)
 
@@ -66,9 +67,12 @@ map_citations_to_segments <- function(citations_df,
       }
     }
 
-    citations_df$segment <- ifelse(is.na(citations_df$segment), "Unknown", citations_df$segment)
+    citations_df$segment <- ifelse(
+      is.na(citations_df$segment),
+      "Unknown",
+      citations_df$segment
+    )
     citations_df$segment_type <- "section"
-
   } else {
     min_pos <- min(citations_df$start_pos, na.rm = TRUE)
     max_pos <- max(citations_df$start_pos, na.rm = TRUE)
@@ -78,7 +82,10 @@ map_citations_to_segments <- function(citations_df,
 
     citations_df$segment <- paste0(
       "Segment ",
-      pmin(n_segments, ceiling((citations_df$start_pos - min_pos) / segment_size))
+      pmin(
+        n_segments,
+        ceiling((citations_df$start_pos - min_pos) / segment_size)
+      )
     )
 
     citations_df$segment <- ifelse(
@@ -177,21 +184,26 @@ map_citations_to_segments <- function(citations_df,
 #' @importFrom stringr str_replace_all str_trim str_locate_all str_sub str_detect str_extract str_split str_extract_all str_length str_count str_remove str_squish str_to_title str_to_lower
 #' @importFrom tidytext unnest_tokens
 #' @importFrom openalexR oa_fetch
-analyze_scientific_content <- function(text,
-                                       doi = NULL,
-                                       mailto = NULL,
-                                       citation_type = c("all", "numeric_superscript",
-                                                         "numeric_bracketed", "author_year"),
-                                       window_size = 10,
-                                       min_word_length = 3,
-                                       remove_stopwords = TRUE,
-                                       language = "en",
-                                       custom_stopwords = NULL,
-                                       ngram_range = c(1, 3),
-                                       parse_multiple_citations = TRUE,
-                                       use_sections_for_citations = "auto",
-                                       n_segments_citations = 10) {
-
+analyze_scientific_content <- function(
+  text,
+  doi = NULL,
+  mailto = NULL,
+  citation_type = c(
+    "all",
+    "numeric_superscript",
+    "numeric_bracketed",
+    "author_year"
+  ),
+  window_size = 10,
+  min_word_length = 3,
+  remove_stopwords = TRUE,
+  language = "en",
+  custom_stopwords = NULL,
+  ngram_range = c(1, 3),
+  parse_multiple_citations = TRUE,
+  use_sections_for_citations = "auto",
+  n_segments_citations = 10
+) {
   # Validate citation_type parameter
   citation_type <- match.arg(citation_type)
 
@@ -225,7 +237,9 @@ analyze_scientific_content <- function(text,
     total_characters = nchar(clean_text),
     total_words = length(stringr::str_split(clean_text, "\\s+")[[1]]),
     total_sentences = length(stringr::str_split(clean_text, "[.!?]+")[[1]]),
-    avg_words_per_sentence = length(stringr::str_split(clean_text, "\\s+")[[1]]) /
+    avg_words_per_sentence = length(stringr::str_split(clean_text, "\\s+")[[
+      1
+    ]]) /
       length(stringr::str_split(clean_text, "[.!?]+")[[1]])
   )
 
@@ -261,31 +275,41 @@ analyze_scientific_content <- function(text,
   if (citation_type == "all") {
     citation_patterns <- all_citation_patterns
     message("Extracting all citation types")
-
   } else if (citation_type == "numeric_superscript") {
     # Include numeric patterns + narrative patterns
     citation_patterns <- all_citation_patterns[c(
-      "numbered_simple", "numbered_multiple", "superscript",
-      "narrative_four_authors_and", "narrative_three_authors_and",
-      "narrative_two_authors_and", "narrative_etal",
-      "narrative_multiple_authors", "narrative_single"
+      "numbered_simple",
+      "numbered_multiple",
+      "superscript",
+      "narrative_four_authors_and",
+      "narrative_three_authors_and",
+      "narrative_two_authors_and",
+      "narrative_etal",
+      "narrative_multiple_authors",
+      "narrative_single"
     )]
-    message("Extracting numeric citations (bracketed and superscript) and narrative citations")
-
+    message(
+      "Extracting numeric citations (bracketed and superscript) and narrative citations"
+    )
   } else if (citation_type == "numeric_bracketed") {
     # Include only bracketed numeric + narrative patterns
     citation_patterns <- all_citation_patterns[c(
-      "numbered_simple", "numbered_multiple",
-      "narrative_four_authors_and", "narrative_three_authors_and",
-      "narrative_two_authors_and", "narrative_etal",
-      "narrative_multiple_authors", "narrative_single"
+      "numbered_simple",
+      "numbered_multiple",
+      "narrative_four_authors_and",
+      "narrative_three_authors_and",
+      "narrative_two_authors_and",
+      "narrative_etal",
+      "narrative_multiple_authors",
+      "narrative_single"
     )]
     message("Extracting bracketed numeric citations and narrative citations")
-
   } else if (citation_type == "author_year") {
     # Include all author-year patterns (excluding numeric)
-    citation_patterns <- all_citation_patterns[!names(all_citation_patterns) %in%
-                                                 c("numbered_simple", "numbered_multiple", "superscript")]
+    citation_patterns <- all_citation_patterns[
+      !names(all_citation_patterns) %in%
+        c("numbered_simple", "numbered_multiple", "superscript")
+    ]
     message("Extracting author-year citations only")
   }
 
@@ -305,9 +329,13 @@ analyze_scientific_content <- function(text,
     if (nrow(matches) > 0) {
       citations_temp <- tibble::tibble(
         citation_type = pattern_name,
-        citation_text = stringr::str_sub(clean_text, matches[,1], matches[,2]),
-        start_pos = matches[,1],
-        end_pos = matches[,2],
+        citation_text = stringr::str_sub(
+          clean_text,
+          matches[, 1],
+          matches[, 2]
+        ),
+        start_pos = matches[, 1],
+        end_pos = matches[, 2],
         citation_id = paste0(pattern_name, "_", 1:nrow(matches))
       )
 
@@ -323,10 +351,14 @@ analyze_scientific_content <- function(text,
     to_remove <- c()
 
     for (i in 1:(nrow(all_citations) - 1)) {
-      if (i %in% to_remove) next
+      if (i %in% to_remove) {
+        next
+      }
 
       for (j in (i + 1):nrow(all_citations)) {
-        if (j %in% to_remove) next
+        if (j %in% to_remove) {
+          next
+        }
 
         cite_i_start <- all_citations$start_pos[i]
         cite_i_end <- all_citations$end_pos[i]
@@ -335,12 +367,10 @@ analyze_scientific_content <- function(text,
 
         if (cite_j_start >= cite_i_start && cite_j_end <= cite_i_end) {
           to_remove <- c(to_remove, j)
-        }
-        else if (cite_i_start >= cite_j_start && cite_i_end <= cite_j_end) {
+        } else if (cite_i_start >= cite_j_start && cite_i_end <= cite_j_end) {
           to_remove <- c(to_remove, i)
           break
-        }
-        else if (cite_j_start < cite_i_end && cite_j_start > cite_i_start) {
+        } else if (cite_j_start < cite_i_end && cite_j_start > cite_i_start) {
           len_i <- cite_i_end - cite_i_start
           len_j <- cite_j_end - cite_j_start
           if (len_j < len_i) {
@@ -365,10 +395,14 @@ analyze_scientific_content <- function(text,
 
   if (parse_multiple_citations && nrow(all_citations) > 0) {
     for (i in 1:nrow(all_citations)) {
-      citation <- all_citations[i,]
+      citation <- all_citations[i, ]
 
       if (citation$citation_type == "complex_multiple_citations") {
-        inner_text <- stringr::str_replace(citation$citation_text, "^\\((?:see\\s+)?(?:e\\.g\\.\\s+)?", "")
+        inner_text <- stringr::str_replace(
+          citation$citation_text,
+          "^\\((?:see\\s+)?(?:e\\.g\\.\\s+)?",
+          ""
+        )
         inner_text <- stringr::str_replace(inner_text, "\\)$", "")
         individual_citations <- stringr::str_split(inner_text, "\\s*;\\s*")[[1]]
 
@@ -401,15 +435,25 @@ analyze_scientific_content <- function(text,
       dplyr::mutate(
         author_part = stringr::str_extract(citation_text, "^[^(]+"),
         year_part = stringr::str_extract(citation_text, "\\(\\d{4}[a-z]?\\)"),
-        standardized_citation = paste0("(", stringr::str_trim(author_part), ", ",
-                                       stringr::str_replace_all(year_part, "[()]", ""), ")")
+        standardized_citation = paste0(
+          "(",
+          stringr::str_trim(author_part),
+          ", ",
+          stringr::str_replace_all(year_part, "[()]", ""),
+          ")"
+        )
       )
 
     if (nrow(narrative_citations) > 0) {
       all_citations <- all_citations %>%
         dplyr::left_join(
           narrative_citations %>%
-            dplyr::select(citation_id, author_part, year_part, standardized_citation),
+            dplyr::select(
+              citation_id,
+              author_part,
+              year_part,
+              standardized_citation
+            ),
           by = "citation_id"
         ) %>%
         dplyr::mutate(
@@ -461,7 +505,7 @@ analyze_scientific_content <- function(text,
     stringr::str_replace_all("\\s+", " ") %>%
     stringr::str_trim()
 
-  if (remove_stopwords){
+  if (remove_stopwords) {
     word_tokens <- tibble::tibble(text = clean_text_filtered) %>%
       tidytext::unnest_tokens(word, text, token = "words") %>%
       dplyr::anti_join(stop_words, by = c("word"))
@@ -490,7 +534,7 @@ analyze_scientific_content <- function(text,
   if (nrow(all_citations) > 0) {
     all_citations <- map_citations_to_segments(
       citations_df = all_citations,
-      text = if(is.list(text)) text else list(Full_text = text),
+      text = if (is.list(text)) text else list(Full_text = text),
       use_sections = use_sections_for_citations,
       n_segments = n_segments_citations
     )
@@ -524,9 +568,17 @@ analyze_scientific_content <- function(text,
     citation_metrics$narrative_ratio <- all_citations %>%
       dplyr::summarise(
         total_citations = dplyr::n(),
-        narrative_citations = sum(stringr::str_detect(citation_type, "narrative")),
-        parenthetical_citations = sum(!stringr::str_detect(citation_type, "narrative")),
-        narrative_percentage = round(narrative_citations / total_citations * 100, 2)
+        narrative_citations = sum(stringr::str_detect(
+          citation_type,
+          "narrative"
+        )),
+        parenthetical_citations = sum(
+          !stringr::str_detect(citation_type, "narrative")
+        ),
+        narrative_percentage = round(
+          narrative_citations / total_citations * 100,
+          2
+        )
       )
 
     if (parse_multiple_citations) {
@@ -537,8 +589,11 @@ analyze_scientific_content <- function(text,
     }
 
     citation_metrics$density <- list(
-      citations_per_1000_words = round((nrow(all_citations) / text_stats$total_words) * 1000, 2),
-      avg_words_between_citations = if(nrow(all_citations) > 1) {
+      citations_per_1000_words = round(
+        (nrow(all_citations) / text_stats$total_words) * 1000,
+        2
+      ),
+      avg_words_between_citations = if (nrow(all_citations) > 1) {
         round(text_stats$total_words / nrow(all_citations), 2)
       } else {
         text_stats$total_words
@@ -552,8 +607,8 @@ analyze_scientific_content <- function(text,
   if (nrow(all_citations) > 1) {
     citation_pairs <- tibble::tibble()
 
-    for (i in 1:(nrow(all_citations)-1)) {
-      for (j in (i+1):nrow(all_citations)) {
+    for (i in 1:(nrow(all_citations) - 1)) {
+      for (j in (i + 1):nrow(all_citations)) {
         distance <- all_citations$start_pos[j] - all_citations$end_pos[i]
         if (distance <= 1000) {
           pair <- tibble::tibble(
@@ -576,12 +631,16 @@ analyze_scientific_content <- function(text,
 
   if (nrow(all_citations) > 0) {
     for (i in 1:nrow(all_citations)) {
-      citation <- all_citations[i,]
+      citation <- all_citations[i, ]
       citation_start <- citation$start_pos
       citation_end <- citation$end_pos
 
       text_before_citation <- substr(clean_text, 1, citation_start - 1)
-      text_after_citation <- substr(clean_text, citation_end + 1, nchar(clean_text))
+      text_after_citation <- substr(
+        clean_text,
+        citation_end + 1,
+        nchar(clean_text)
+      )
 
       words_before_df <- tibble::tibble(text = text_before_citation) %>%
         tidytext::unnest_tokens(word, text, token = "words", to_lower = FALSE)
@@ -628,10 +687,15 @@ analyze_scientific_content <- function(text,
         words_after <- ""
       }
 
-      full_context <- paste(words_before, citation$citation_text, words_after) %>%
+      full_context <- paste(
+        words_before,
+        citation$citation_text,
+        words_after
+      ) %>%
         stringr::str_trim()
 
-      context_word_count <- n_words_before + n_words_after +
+      context_word_count <- n_words_before +
+        n_words_after +
         length(strsplit(citation$citation_text, "\\s+")[[1]])
 
       context_row <- tibble::tibble(
@@ -649,8 +713,11 @@ analyze_scientific_content <- function(text,
         is_parsed_multiple = citation$citation_type == "parsed_from_multiple"
       )
 
-      if ("original_complex_citation" %in% names(citation) &&
-          !is.na(citation$original_complex_citation)) {
+      if (
+        "original_complex_citation" %in%
+          names(citation) &&
+          !is.na(citation$original_complex_citation)
+      ) {
         context_row$original_complex_citation <- citation$original_complex_citation
       }
 
@@ -670,45 +737,79 @@ analyze_scientific_content <- function(text,
   }
 
   if (!is.null(doi)) {
-    tryCatch({
-      message("Attempting to retrieve references from CrossRef...")
-      refs_crossref <- get_crossref_references(doi, mailto)
+    tryCatch(
+      {
+        message("Attempting to retrieve references from CrossRef...")
+        refs_crossref <- get_crossref_references(doi, mailto)
 
-      if (!is.null(refs_crossref) && nrow(refs_crossref) > 0) {
-        parsed_references <- refs_crossref %>%
-          dplyr::mutate(
-            ref_id = paste0("REF_", row_number()),
-            ref_full_text = ifelse(!is.na(ref_full), ref_full, NA_character_),
-            ref_full_text2 = paste(
-              ifelse(!is.na(author), paste0(author,","), ""),
-              ifelse(!is.na(year), paste0("(", year, "),"), ""),
-              ifelse(!is.na(article_title), paste0(article_title,"."), ""),
-              ifelse(!is.na(journal), paste0(journal,"."), ""),
-              sep = " "
-            ) %>%  stringr::str_trim() %>%  stringr::str_squish(),
-            ref_first_author = stringr::str_remove_all(author, "\\b[A-Z]+\\b\\s*") |> str_trim() %>%  stringr::str_to_title(),
-            ref_first_author_normalized = stringr::str_to_lower(ref_first_author),
-            ref_year = as.character(year),
-            ref_authors = author,
-            ref_journal = journal,
-            ref_source = "crossref",
-            n_authors = NA_integer_
-          ) %>%
-          dplyr::select(ref_id, ref_full_text, ref_authors, ref_year, ref_journal,
-                        ref_first_author, ref_first_author_normalized, n_authors, doi, ref_full_text2, ref_source)
-          string_authors <- str_extract(parsed_references$ref_full_text, ".*?(?=\\s*\\()")
-          parsed_references$n_authors <- as.integer((str_count(string_authors, ",") + 1) / 2)
+        if (!is.null(refs_crossref) && nrow(refs_crossref) > 0) {
+          parsed_references <- refs_crossref %>%
+            dplyr::mutate(
+              ref_id = paste0("REF_", row_number()),
+              ref_full_text = ifelse(!is.na(ref_full), ref_full, NA_character_),
+              ref_full_text2 = paste(
+                ifelse(!is.na(author), paste0(author, ","), ""),
+                ifelse(!is.na(year), paste0("(", year, "),"), ""),
+                ifelse(!is.na(article_title), paste0(article_title, "."), ""),
+                ifelse(!is.na(journal), paste0(journal, "."), ""),
+                sep = " "
+              ) %>%
+                stringr::str_trim() %>%
+                stringr::str_squish(),
+              ref_first_author = stringr::str_remove_all(
+                author,
+                "\\b[A-Z]+\\b\\s*"
+              ) |>
+                str_trim() %>%
+                stringr::str_to_title(),
+              ref_first_author_normalized = stringr::str_to_lower(
+                ref_first_author
+              ),
+              ref_year = as.character(year),
+              ref_authors = author,
+              ref_journal = journal,
+              ref_source = "crossref",
+              n_authors = NA_integer_
+            ) %>%
+            dplyr::select(
+              ref_id,
+              ref_full_text,
+              ref_authors,
+              ref_year,
+              ref_journal,
+              ref_first_author,
+              ref_first_author_normalized,
+              n_authors,
+              doi,
+              ref_full_text2,
+              ref_source
+            )
+          string_authors <- str_extract(
+            parsed_references$ref_full_text,
+            ".*?(?=\\s*\\()"
+          )
+          parsed_references$n_authors <- as.integer(
+            (str_count(string_authors, ",") + 1) / 2
+          )
 
-          message(paste("Successfully retrieved", nrow(parsed_references), "references from CrossRef"))
+          message(paste(
+            "Successfully retrieved",
+            nrow(parsed_references),
+            "references from CrossRef"
+          ))
 
           # download metadata from openalex
           dois <- parsed_references$doi[!is.na(parsed_references$doi)]
           dois <- unique(dois)
           dois <- tolower(trimws(dois[dois != ""]))
 
-          message(paste("Fetching Open Access metadata for", length(dois), "DOIs from OpenAlex..."))
+          message(paste(
+            "Fetching Open Access metadata for",
+            length(dois),
+            "DOIs from OpenAlex..."
+          ))
 
-          if (!is.null(dois) && length(dois) > 0){
+          if (!is.null(dois) && length(dois) > 0) {
             references_oa <- safe_oa_fetch(
               entity = "works",
               doi = dois
@@ -717,28 +818,55 @@ analyze_scientific_content <- function(text,
 
           if (!is.null(references_oa)) {
             references_oa <- add_reference_info(references_oa)
-            parsed_references <- complete_references_from_oa(parsed_references, references_oa)
-            message(paste("Successfully retrieved metadata for", nrow(references_oa), "references from OpenAlex"))
-            }
+            parsed_references <- complete_references_from_oa(
+              parsed_references,
+              references_oa
+            ) %>%
+              # replace ref_full_text with ref_full_text2 when NA
+              mutate(
+                ref_full_text = ifelse(
+                  is.na(ref_full_text) | ref_full_text == "",
+                  ref_full_text2,
+                  ref_full_text
+                )
+              )
+            message(paste(
+              "Successfully retrieved metadata for",
+              nrow(references_oa),
+              "references from OpenAlex"
+            ))
+          }
+        }
+      },
+      error = function(e) {
+        warning(paste("Failed to retrieve from CrossRef:", e$message))
       }
-    }, error = function(e) {
-      warning(paste("Failed to retrieve from CrossRef:", e$message))
-    })
+    )
   }
 
-  if (is.null(parsed_references) && !is.null(references_section) && references_section != "") {
+  if (
+    is.null(parsed_references) &&
+      !is.null(references_section) &&
+      references_section != ""
+  ) {
     message("Parsing references from text...")
     parsed_references <- parse_references_section(references_section) %>%
-      mutate(ref_source = "parsed",
-             doi = NA_character_)
+      mutate(ref_source = "parsed", doi = NA_character_)
   }
 
-  if (!is.null(parsed_references) && nrow(parsed_references) > 0 &&
-      nrow(all_citations) > 0) {
-
+  if (
+    !is.null(parsed_references) &&
+      nrow(parsed_references) > 0 &&
+      nrow(all_citations) > 0
+  ) {
     citation_references_mapping <- match_citations_to_references(
       citations_df = all_citations %>%
-        dplyr::select(citation_id, citation_text, citation_text_clean, citation_type),
+        dplyr::select(
+          citation_id,
+          citation_text,
+          citation_text_clean,
+          citation_type
+        ),
       references_df = parsed_references
     )
   }
@@ -748,7 +876,12 @@ analyze_scientific_content <- function(text,
     citation_contexts <- citation_contexts %>%
       dplyr::left_join(
         citation_references_mapping %>%
-          dplyr::select(citation_id, matched_ref_id, ref_full_text, match_confidence),
+          dplyr::select(
+            citation_id,
+            matched_ref_id,
+            ref_full_text,
+            match_confidence
+          ),
         by = "citation_id"
       )
   }
@@ -758,7 +891,7 @@ analyze_scientific_content <- function(text,
     basic_stats = text_stats,
     total_citations_found = nrow(all_citations),
     citation_types_found = unique(all_citations$citation_type),
-    most_frequent_words = word_frequencies %>%  dplyr::slice_head(n = 20)
+    most_frequent_words = word_frequencies %>% dplyr::slice_head(n = 20)
   )
 
   results$citations <- all_citations
@@ -786,15 +919,45 @@ analyze_scientific_content <- function(text,
     total_words_analyzed = nrow(tokens),
     unique_words = nrow(word_frequencies),
     citations_extracted = nrow(all_citations),
-    narrative_citations = sum(stringr::str_detect(all_citations$citation_type, "narrative"), na.rm = TRUE),
-    parenthetical_citations = sum(!stringr::str_detect(all_citations$citation_type, "narrative"), na.rm = TRUE),
-    complex_citations_parsed = sum(all_citations$citation_type == "parsed_from_multiple", na.rm = TRUE),
+    narrative_citations = sum(
+      stringr::str_detect(all_citations$citation_type, "narrative"),
+      na.rm = TRUE
+    ),
+    parenthetical_citations = sum(
+      !stringr::str_detect(all_citations$citation_type, "narrative"),
+      na.rm = TRUE
+    ),
+    complex_citations_parsed = sum(
+      all_citations$citation_type == "parsed_from_multiple",
+      na.rm = TRUE
+    ),
     lexical_diversity = nrow(word_frequencies) / nrow(tokens),
-    average_citation_context_length = if(nrow(citation_contexts) > 0) mean(citation_contexts$context_word_count) else 0,
-    citation_density_per_1000_words = if(nrow(all_citations) > 0) round((nrow(all_citations) / text_stats$total_words) * 1000, 2) else 0,
-    references_parsed = if (!is.null(parsed_references)) nrow(parsed_references) else 0,
+    average_citation_context_length = if (nrow(citation_contexts) > 0) {
+      mean(citation_contexts$context_word_count)
+    } else {
+      0
+    },
+    citation_density_per_1000_words = if (nrow(all_citations) > 0) {
+      round((nrow(all_citations) / text_stats$total_words) * 1000, 2)
+    } else {
+      0
+    },
+    references_parsed = if (!is.null(parsed_references)) {
+      nrow(parsed_references)
+    } else {
+      0
+    },
     citations_matched_to_refs = if (!is.null(citation_references_mapping)) {
-      sum(citation_references_mapping$match_confidence %in% c("high", "high_second_author", "medium_multiple_matches", "medium_fuzzy"), na.rm = TRUE)
+      sum(
+        citation_references_mapping$match_confidence %in%
+          c(
+            "high",
+            "high_second_author",
+            "medium_multiple_matches",
+            "medium_fuzzy"
+          ),
+        na.rm = TRUE
+      )
     } else {
       0
     },
@@ -815,86 +978,153 @@ analyze_scientific_content <- function(text,
 # color palette
 colorlist <- function() {
   c(
-    "#E41A1C", "#377EB8", "#4DAF4A", "#984EA3", "#FF7F00", "#A65628", "#F781BF", "#999999",
-    "#66C2A5", "#FC8D62", "#8DA0CB", "#E78AC3", "#A6D854", "#FFD92F", "#B3B3B3", "#A6CEE3",
-    "#1F78B4", "#B2DF8A", "#33A02C", "#FB9A99", "#E31A1C", "#FDBF6F", "#FF7F00", "#CAB2D6",
-    "#6A3D9A", "#B15928", "#8DD3C7", "#BEBADA", "#FB8072", "#80B1D3", "#FDB462", "#B3DE69",
-    "#D9D9D9", "#BC80BD", "#CCEBC5"
+    "#E41A1C",
+    "#377EB8",
+    "#4DAF4A",
+    "#984EA3",
+    "#FF7F00",
+    "#A65628",
+    "#F781BF",
+    "#999999",
+    "#66C2A5",
+    "#FC8D62",
+    "#8DA0CB",
+    "#E78AC3",
+    "#A6D854",
+    "#FFD92F",
+    "#B3B3B3",
+    "#A6CEE3",
+    "#1F78B4",
+    "#B2DF8A",
+    "#33A02C",
+    "#FB9A99",
+    "#E31A1C",
+    "#FDBF6F",
+    "#FF7F00",
+    "#CAB2D6",
+    "#6A3D9A",
+    "#B15928",
+    "#8DD3C7",
+    "#BEBADA",
+    "#FB8072",
+    "#80B1D3",
+    "#FDB462",
+    "#B3DE69",
+    "#D9D9D9",
+    "#BC80BD",
+    "#CCEBC5"
   )
 }
 
-safe_oa_fetch <- function(entity,
-         identifier = NULL,
-         doi = NULL,
-         attempt = 1,
-         sleep_time = 1,
-         retry_delay = 2,
-         max_retries = 3,
-         verbose = FALSE) {
-
+safe_oa_fetch <- function(
+  entity,
+  identifier = NULL,
+  doi = NULL,
+  attempt = 1,
+  sleep_time = 1,
+  retry_delay = 2,
+  max_retries = 3,
+  verbose = FALSE
+) {
   if (attempt > 1 && verbose) {
     cat("Retry attempt", attempt, "of", max_retries, "\n")
   }
 
   # Add delay before API call (except for first attempt)
   if (attempt > 1 || entity == "authors") {
-    wait_time <- if (attempt == 1) sleep_time else retry_delay * (2 ^ (attempt - 2))
-    if (verbose) cat("Waiting", round(wait_time, 2), "seconds before API call...\n")
+    wait_time <- if (attempt == 1) {
+      sleep_time
+    } else {
+      retry_delay * (2^(attempt - 2))
+    }
+    if (verbose) {
+      cat("Waiting", round(wait_time, 2), "seconds before API call...\n")
+    }
     Sys.sleep(wait_time)
   }
 
-  result <- tryCatch({
-    if (!is.null(identifier)) {
-      openalexR::oa_fetch(
-        entity = entity,
-        identifier = identifier,
-        output = "tibble"
-      )
-    } else if (!is.null(doi)) {
-      openalexR::oa_fetch(
-        entity = entity,
-        doi = doi,
-        output = "tibble"
-      )
-    }
-  }, error = function(e) {
-    error_msg <- as.character(e$message)
-
-    # Check if it's a rate limit error (429)
-    if (grepl("429", error_msg) || grepl("Too Many Requests", error_msg, ignore.case = TRUE)) {
-      if (attempt < max_retries) {
-        if (verbose) {
-          cat("Rate limit hit (HTTP 429). Retrying with exponential backoff...\n")
-        }
-        return(safe_oa_fetch(entity, identifier, doi, attempt + 1,
-                             sleep_time, retry_delay, max_retries, verbose))
-      } else {
-        stop("Rate limit exceeded after ", max_retries, " attempts. ",
-             "Please wait a few minutes or set an OpenAlex API key for higher rate limits. ",
-             "Get a free key at: https://openalex.org/")
+  result <- tryCatch(
+    {
+      if (!is.null(identifier)) {
+        openalexR::oa_fetch(
+          entity = entity,
+          identifier = identifier,
+          output = "tibble"
+        )
+      } else if (!is.null(doi)) {
+        openalexR::oa_fetch(
+          entity = entity,
+          doi = doi,
+          output = "tibble"
+        )
       }
-    }
+    },
+    error = function(e) {
+      error_msg <- as.character(e$message)
 
-    # Check for other temporary errors
-    if (grepl("500|502|503|504", error_msg) || grepl("timeout", error_msg, ignore.case = TRUE)) {
-      if (attempt < max_retries) {
-        if (verbose) {
-          cat("Temporary server error. Retrying...\n")
+      # Check if it's a rate limit error (429)
+      if (
+        grepl("429", error_msg) ||
+          grepl("Too Many Requests", error_msg, ignore.case = TRUE)
+      ) {
+        if (attempt < max_retries) {
+          if (verbose) {
+            cat(
+              "Rate limit hit (HTTP 429). Retrying with exponential backoff...\n"
+            )
+          }
+          return(safe_oa_fetch(
+            entity,
+            identifier,
+            doi,
+            attempt + 1,
+            sleep_time,
+            retry_delay,
+            max_retries,
+            verbose
+          ))
+        } else {
+          stop(
+            "Rate limit exceeded after ",
+            max_retries,
+            " attempts. ",
+            "Please wait a few minutes or set an OpenAlex API key for higher rate limits. ",
+            "Get a free key at: https://openalex.org/"
+          )
         }
-        return(safe_oa_fetch(entity, identifier, doi, attempt + 1,
-                             sleep_time, retry_delay, max_retries, verbose))
       }
-    }
 
-    # If not a retryable error, or max retries reached, throw the error
-    stop(e$message)
-  })
+      # Check for other temporary errors
+      if (
+        grepl("500|502|503|504", error_msg) ||
+          grepl("timeout", error_msg, ignore.case = TRUE)
+      ) {
+        if (attempt < max_retries) {
+          if (verbose) {
+            cat("Temporary server error. Retrying...\n")
+          }
+          return(safe_oa_fetch(
+            entity,
+            identifier,
+            doi,
+            attempt + 1,
+            sleep_time,
+            retry_delay,
+            max_retries,
+            verbose
+          ))
+        }
+      }
+
+      # If not a retryable error, or max retries reached, throw the error
+      stop(e$message)
+    }
+  )
 
   return(result)
 }
 
 add_reference_info <- function(df) {
-
   # Funzione helper per estrarre l'iniziale del nome
   get_initial <- function(full_name) {
     # Rimuove il cognome (ultima parola) e prende l'iniziale delle altre parole
@@ -958,10 +1188,23 @@ add_reference_info <- function(df) {
       # Gestisce valori mancanti
       year_str <- ifelse(is.na(year), "n.d.", as.character(year))
       title_str <- ifelse(is.na(title) || title == "", "Untitled", title)
-      source_str <- ifelse(is.na(source) || source == "", "Unknown source", source)
+      source_str <- ifelse(
+        is.na(source) || source == "",
+        "Unknown source",
+        source
+      )
 
       # Crea la reference completa
-      paste0(authors_str, " (", year_str, ") ", title_str, ", ", source_str, ".")
+      paste0(
+        authors_str,
+        " (",
+        year_str,
+        ") ",
+        title_str,
+        ", ",
+        source_str,
+        "."
+      )
     },
     df$authorships,
     df$publication_year,
@@ -974,19 +1217,24 @@ add_reference_info <- function(df) {
 }
 
 complete_references_from_oa <- function(references, references_oa) {
-
   # Funzione helper per estrarre il cognome
   get_surname <- function(full_name) {
-    if (is.na(full_name) || full_name == "") return(NA)
+    if (is.na(full_name) || full_name == "") {
+      return(NA)
+    }
     parts <- strsplit(full_name, " ")[[1]]
     return(parts[length(parts)])
   }
 
   # Funzione helper per estrarre l'iniziale del nome
   get_initial <- function(full_name) {
-    if (is.na(full_name) || full_name == "") return("")
+    if (is.na(full_name) || full_name == "") {
+      return("")
+    }
     parts <- strsplit(full_name, " ")[[1]]
-    if (length(parts) <= 1) return("")
+    if (length(parts) <= 1) {
+      return("")
+    }
     first_names <- parts[-length(parts)]
     initials <- sapply(first_names, function(x) substr(x, 1, 1))
     return(paste0(initials, collapse = "."))
@@ -1021,65 +1269,84 @@ complete_references_from_oa <- function(references, references_oa) {
   }
 
   # Normalizza i DOI per il matching (rimuove spazi, converte in minuscolo)
-  references$doi_clean <- tolower(trimws(gsub("https://doi.org/","",references$doi)))
-  references_oa$doi_clean <- tolower(trimws(gsub("https://doi.org/","",references_oa$doi)))
+  references$doi_clean <- tolower(trimws(gsub(
+    "https://doi.org/",
+    "",
+    references$doi
+  )))
+  references_oa$doi_clean <- tolower(trimws(gsub(
+    "https://doi.org/",
+    "",
+    references_oa$doi
+  )))
 
   # Loop attraverso ogni riga di references
   for (i in 1:nrow(references)) {
     doi_ref <- references$doi_clean[i]
 
-    if (is.na(doi_ref) || doi_ref == "") next
+    if (is.na(doi_ref) || doi_ref == "") {
+      next
+    }
 
     # Trova la corrispondenza in references_oa
     match_idx <- which(references_oa$doi_clean == doi_ref)
 
     if (length(match_idx) > 0) {
-      match_idx <- match_idx[1]  # Prende la prima corrispondenza
+      match_idx <- match_idx[1] # Prende la prima corrispondenza
 
       # Completa ref_full_text se NA
-      if (is.na(references$ref_full_text[i])) {
-        references$ref_full_text[i] <- references_oa$ref_full_name[match_idx]
-      }
+      # if (is.na(references$ref_full_text[i])) {
+      references$ref_full_text[i] <- references_oa$ref_full_name[match_idx]
+      # }
 
       # Completa ref_authors se NA
-      if (is.na(references$ref_authors[i]) || references$ref_authors[i] == "") {
-        references$ref_authors[i] <- format_authors(
-          references_oa$authorships[[match_idx]]
-        )
-      }
+      # if (is.na(references$ref_authors[i]) || references$ref_authors[i] == "") {
+      references$ref_authors[i] <- format_authors(
+        references_oa$authorships[[match_idx]]
+      )
+      # }
 
       # Completa ref_year se NA
-      if (is.na(references$ref_year[i]) || references$ref_year[i] == "") {
-        references$ref_year[i] <- as.character(
-          references_oa$publication_year[match_idx]
-        )
-      }
+      # if (is.na(references$ref_year[i]) || references$ref_year[i] == "") {
+      references$ref_year[i] <- as.character(
+        references_oa$publication_year[match_idx]
+      )
+      # }
 
       # Completa ref_journal se NA
-      if (is.na(references$ref_journal[i]) || references$ref_journal[i] == "") {
-        references$ref_journal[i] <- references_oa$source_display_name[match_idx]
-      }
+      # if (is.na(references$ref_journal[i]) || references$ref_journal[i] == "") {
+      references$ref_journal[i] <- references_oa$source_display_name[
+        match_idx
+      ]
+      # }
 
       # Completa ref_first_author se NA
-      if (is.na(references$ref_first_author[i]) || references$ref_first_author[i] == "") {
-        references$ref_first_author[i] <- get_first_author(
-          references_oa$authorships[[match_idx]]
-        )
-      }
+      # if (
+      #   is.na(references$ref_first_author[i]) ||
+      #     references$ref_first_author[i] == ""
+      # ) {
+      references$ref_first_author[i] <- get_first_author(
+        references_oa$authorships[[match_idx]]
+      )
+      # }
 
       # Completa ref_first_author_normalized se NA
-      if (is.na(references$ref_first_author_normalized[i]) ||
-          references$ref_first_author_normalized[i] == "") {
-        first_auth <- get_first_author(references_oa$authorships[[match_idx]])
-        if (!is.na(first_auth)) {
-          references$ref_first_author_normalized[i] <- tolower(trimws(first_auth))
-        }
+      # if (
+      #   is.na(references$ref_first_author_normalized[i]) ||
+      #     references$ref_first_author_normalized[i] == ""
+      # ) {
+      first_auth <- get_first_author(references_oa$authorships[[match_idx]])
+      if (!is.na(first_auth)) {
+        references$ref_first_author_normalized[i] <- tolower(trimws(
+          first_auth
+        ))
       }
+      # }
 
       # Completa n_authors se NA
-      if (is.na(references$n_authors[i])) {
-        references$n_authors[i] <- references_oa$n_authors[match_idx]
-      }
+      # if (is.na(references$n_authors[i])) {
+      references$n_authors[i] <- references_oa$n_authors[match_idx]
+      # }
     }
   }
 
