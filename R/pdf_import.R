@@ -726,42 +726,44 @@ pdf2txt_auto <- function(
   if (enable_ai_support) {
     if (is.null(api_key)) {
       api_key <- Sys.getenv("GEMINI_API_KEY")
-      if (!isTRUE(nchar(api_key) == 0)) {
-        message("Start AI text processing and cleaning")
-        pdf_text <- result
-        # Execute AI-enhanced text extraction
-        text <- process_large_pdf(
-          file,
-          api_key = api_key,
-          pages_per_chunk = 5,
-          model = ai_model
+    }
+
+    if (!isTRUE(nchar(api_key) == 0)) {
+      message("Start AI text processing and cleaning")
+      pdf_text <- result
+      # Execute AI-enhanced text extraction
+      text <- process_large_pdf(
+        file,
+        api_key = api_key,
+        pages_per_chunk = 5,
+        model = ai_model
+      )
+
+      if (!is.null(text)) {
+        text_AI <- merge_text_chunks_named(text) %>% as.list()
+
+        text_AI <- text_AI_conversion(
+          text_AI,
+          citation_type = citation_type
         )
 
-        if (!is.null(text)) {
-          text_AI <- merge_text_chunks_named(text) %>% as.list()
-
-          text_AI <- text_AI_conversion(
-            text_AI,
-            citation_type = citation_type
-          )
-
-          # Preserve References/Bibliography from original extraction
-          if ("Reference" %in% names(pdf_text)) {
-            text_AI$References <- pdf_text$References
-          } else if ("Bibliography" %in% names(pdf_text)) {
-            text_AI$References <- pdf_text$Bibliography
-          }
-
-          Full_text <- paste(unlist(text_AI), collapse = "\n\n")
-          text_AI <- c(Full_text = Full_text, text_AI)
-          result <- text_AI
-        } else {
-          message(
-            "AI processing failed, using deterministic PDF extraction."
-          )
+        # Preserve References/Bibliography from original extraction
+        if ("Reference" %in% names(pdf_text)) {
+          text_AI$References <- pdf_text$References
+        } else if ("Bibliography" %in% names(pdf_text)) {
+          text_AI$References <- pdf_text$Bibliography
         }
+
+        Full_text <- paste(unlist(text_AI), collapse = "\n\n")
+        text_AI <- c(Full_text = Full_text, text_AI)
+        result <- text_AI
+      } else {
+        message(
+          "AI processing failed, using deterministic PDF extraction."
+        )
       }
     }
+    # }
   }
 
   return(result)
