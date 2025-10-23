@@ -180,7 +180,7 @@ map_citations_to_segments <- function(
 #'
 #' @export
 #' @importFrom tibble tibble
-#' @importFrom dplyr mutate select filter bind_rows arrange desc left_join count rowwise ungroup slice_head rename
+#' @importFrom dplyr mutate select filter bind_rows arrange desc left_join count rowwise ungroup slice_head rename row_number
 #' @importFrom stringr str_replace_all str_trim str_locate_all str_sub str_detect str_extract str_split str_extract_all str_length str_count str_remove str_squish str_to_title str_to_lower
 #' @importFrom tidytext unnest_tokens
 #' @importFrom openalexR oa_fetch
@@ -211,21 +211,23 @@ analyze_scientific_content <- function(
 
   references_section <- NULL
 
-  if (is.list(text)) {
-    if ("Full_text" %in% names(text)) {
-      clean_text <- text$Full_text
-      sections_to_use <- NULL
-    } else {
-      sections_to_use <- setdiff(names(text), "References")
-      clean_text <- paste(text[sections_to_use], collapse = " ")
-    }
+  # if text is not a list transform it in a list
+  if (!is.list(text)) {
+    text <- list(Full_text = text)
+  }
 
-    if ("References" %in% names(text)) {
-      references_section <- text$References
-    }
+  # if Full_text is present and the list has more than 1 element
+  if (length(text) > 1) {
+    sections_to_use <- setdiff(names(text), c("Full_text", "References"))
+    clean_text <- paste(text[sections_to_use], collapse = " ")
   } else {
-    clean_text <- text
+    names(text) <- "Full_text"
+    clean_text <- text$Full_text
     sections_to_use <- NULL
+  }
+
+  if ("References" %in% names(text)) {
+    references_section <- text$References
   }
 
   clean_text <- clean_text %>%
@@ -493,7 +495,7 @@ analyze_scientific_content <- function(
     dplyr::count(word, sort = TRUE) %>%
     dplyr::mutate(
       frequency = n / sum(n),
-      rank = row_number()
+      rank = dplyr::row_number()
     )
 
   # N-gram analysis
@@ -759,7 +761,7 @@ analyze_scientific_content <- function(
               ref_first_author = stringr::str_remove_all(
                 author,
                 "\\b[A-Z]+\\b\\s*"
-              ) |>
+              ) %>%
                 str_trim() %>%
                 stringr::str_to_title(),
               ref_first_author_normalized = stringr::str_to_lower(

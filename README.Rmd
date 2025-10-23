@@ -18,6 +18,10 @@ knitr::opts_chunk$set(
 
   `contentanalysis` is a comprehensive R package designed for in-depth analysis of scientific literature. It bridges the gap between raw PDF documents and structured, analyzable data by combining advanced text extraction, citation analysis, and bibliometric enrichment from external databases.
 
+**AI-Enhanced PDF Import**: The package supports AI-assisted PDF text extraction through Google's Gemini API, enabling more accurate parsing of complex document layouts. To use this feature, you need to obtain an API key from [Google AI Studio](https://aistudio.google.com/apikey).
+
+**Integration with bibliometrix**: This package complements the science mapping analyses available in `bibliometrix` and its Shiny interface `biblioshiny`. If you want to perform content analysis within a user-friendly Shiny application with all the advantages of an interactive interface, simply install `bibliometrix` and launch `biblioshiny`, where you'll find a dedicated **Content Analysis** menu that implements all the analyses and outputs of this library.
+
 ### What Makes It Unique?
 
 The package goes beyond simple PDF parsing by creating a multi-layered analytical framework:
@@ -127,7 +131,10 @@ Complete workflow analyzing a real scientific paper:
 library(contentanalysis)
 ```
 
-### Download example paper (open access)
+### Download example paper
+The paper is an open access article by Aria et al.:
+
+Aria, M., Cuccurullo, C., & Gnasso, A. (2021). A comparison among interpretative proposals for Random Forests. Machine Learning with Applications, 6, 100094. 
 
 ```{r}
 paper_url <- "https://raw.githubusercontent.com/massimoaria/contentanalysis/master/inst/examples/example_paper.pdf"
@@ -467,12 +474,3 @@ GPL (>= 3)
 Please report issues at: https://github.com/massimoaria/contentanalysis/issues
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Acknowledgments
-
-This package builds upon the excellent work of:
-
-  - The pdftools team for PDF processing
-- The tidyverse team for data manipulation tools
-- The openalexR developers for OpenAlex API integration
-- CrossRef for providing open bibliographic data

@@ -2,7 +2,7 @@
 % Please edit documentation in R/pdf_import.R
 \name{pdf2txt_auto}
 \alias{pdf2txt_auto}
-\title{Import PDF with automatic section detection}
+\title{Import PDF with Automatic Section Detection}
 \usage{
 pdf2txt_auto(
   file,
@@ -10,52 +10,128 @@ pdf2txt_auto(
   preserve_structure = TRUE,
   sections = TRUE,
   normalize_refs = TRUE,
-  citation_type = c("none", "numeric_superscript", "numeric_bracketed", "author_year")
+  citation_type = c("none", "numeric_superscript", "numeric_bracketed", "author_year"),
+  enable_ai_support = FALSE,
+  ai_model = "2.0-flash",
+  api_key = NULL
 )
 }
 \arguments{
-\item{file}{Character string. Path to PDF file.}
+\item{file}{Character. Path to the PDF file to be processed.}
 
-\item{n_columns}{Integer or NULL. Number of columns. Default is NULL (auto-detect).}
+\item{n_columns}{Integer or NULL. Number of columns in the PDF layout.
+Default is NULL (automatic detection).}
 
-\item{preserve_structure}{Logical. Preserve paragraph structure. Default is TRUE.}
+\item{preserve_structure}{Logical. If TRUE, preserves paragraph structure and formatting.
+Default is TRUE.}
 
-\item{sections}{Logical. Split into sections. Default is TRUE.}
+\item{sections}{Logical. If TRUE, splits the document into sections based on headers.
+Default is TRUE.}
 
-\item{normalize_refs}{Logical. Normalize references formatting. Default is TRUE.}
+\item{normalize_refs}{Logical. If TRUE, normalizes reference formatting in the document.
+Default is TRUE.}
 
-\item{citation_type}{Character string. Type of citations in the document:
+\item{citation_type}{Character. Type of citations used in the document. Options are:
 \itemize{
-\item "none": No citation conversion (default)
-\item "numeric_superscript": Numeric citations in superscript, will be converted to \link[dplyr:context]{dplyr::n}
-\item "numeric_bracketed": Numeric citations already in brackets \link[dplyr:context]{dplyr::n}
-\item "author_year": Author-year citations like (Smith, 2020)
+\item \code{"none"}: No citation conversion (default)
+\item \code{"numeric_superscript"}: Numeric citations in superscript format,
+will be converted to bracket notation
+\item \code{"numeric_bracketed"}: Numeric citations already in brackets
+\item \code{"author_year"}: Author-year citations (e.g., Smith, 2020)
 }
 This parameter helps avoid false positives in citation detection. Only specify
-"numeric_superscript" if your document uses superscript numbers for citations.}
+\code{"numeric_superscript"} if your document uses superscript numbers for citations.}
+
+\item{enable_ai_support}{Logical. If TRUE, enables AI-enhanced text extraction using
+Google Gemini API. Default is FALSE.}
+
+\item{ai_model}{Character. The Gemini model version to use for AI processing.
+Default is "2.0-flash". See \code{\link{process_large_pdf}} for available models.}
+
+\item{api_key}{Character or NULL. Google Gemini API key. If NULL, the function
+attempts to read from the \code{GEMINI_API_KEY} environment variable.}
 }
 \value{
-If sections=TRUE, returns named list with Full_text and section elements.
-If sections=FALSE, returns character string.
+If \code{sections = TRUE}, returns a named list where:
+\itemize{
+\item The first element \code{Full_text} contains the complete document text
+\item Subsequent elements contain individual sections (Introduction, Methods, etc.)
+}
+If \code{sections = FALSE}, returns a character string with the full document text.
+Returns NA if extraction fails.
 }
 \description{
-High-level function that imports PDF, extracts text handling multi-column
-layouts, and optionally splits into sections. Now includes control over
-citation format conversion.
+High-level function that imports PDF files, extracts text while handling multi-column
+layouts, and optionally splits content into sections. Supports AI-enhanced text
+extraction using Google Gemini API and includes control over citation format conversion.
+}
+\details{
+The function attempts multiple extraction methods:
+\enumerate{
+\item First tries multi-column extraction with \code{\link{pdf2txt_multicolumn_safe}}
+\item Falls back to standard \code{pdftools::pdf_text} if the first method fails
+\item Optionally applies AI-enhanced extraction if \code{enable_ai_support = TRUE}
+}
+
+When AI support is enabled and successful, the function:
+\itemize{
+\item Processes the PDF using \code{\link{process_large_pdf}}
+\item Merges text chunks and converts to appropriate format
+\item Preserves References/Bibliography section from standard extraction
+\item Returns AI-processed content with improved formatting
+}
+
+Citation conversion is applied based on the \code{citation_type} parameter to
+standardize reference markers throughout the document.
+}
+\note{
+\itemize{
+\item AI support requires a valid Google Gemini API key
+\item AI processing may take longer but provides better text extraction quality
+\item The function automatically handles hyphenation and line breaks
+\item Multi-column layouts are detected and processed appropriately
+}
 }
 \examples{
 \dontrun{
-# Full import with sections and superscript citation conversion
-doc <- pdf2txt_auto("paper.pdf", citation_type = "numeric_superscript")
+# Basic import with automatic section detection
+doc <- pdf2txt_auto("paper.pdf")
+
+# Import with superscript citation conversion
+doc <- pdf2txt_auto(
+  "paper.pdf",
+  citation_type = "numeric_superscript"
+)
+
+# Import with AI-enhanced extraction
+doc <- pdf2txt_auto(
+  "paper.pdf",
+  enable_ai_support = TRUE,
+  ai_model = "2.0-flash",
+  api_key = Sys.getenv("GEMINI_API_KEY")
+)
 
 # Import paper with author-year citations (no conversion)
-doc <- pdf2txt_auto("paper.pdf", citation_type = "author_year")
+doc <- pdf2txt_auto(
+  "paper.pdf",
+  citation_type = "author_year"
+)
 
-# Import paper with bracketed citations (no conversion needed)
-doc <- pdf2txt_auto("paper.pdf", citation_type = "numeric_bracketed")
+# Simple text extraction without sections or citation processing
+text <- pdf2txt_auto(
+  "paper.pdf",
+  sections = FALSE,
+  citation_type = "none"
+)
 
-# Simple text extraction without citation processing
-text <- pdf2txt_auto("paper.pdf", sections = FALSE, citation_type = "none")
+# Access specific sections
+introduction <- doc$Introduction
+methods <- doc$Methods
 }
 
+}
+\seealso{
+\code{\link{pdf2txt_multicolumn_safe}} for multi-column extraction,
+\code{\link{process_large_pdf}} for AI-enhanced processing,
+\code{\link{split_into_sections}} for section detection
 }

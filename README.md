@@ -9,6 +9,19 @@ documents and structured, analyzable data by combining advanced text
 extraction, citation analysis, and bibliometric enrichment from external
 databases.
 
+**AI-Enhanced PDF Import**: The package supports AI-assisted PDF text
+extraction through Google’s Gemini API, enabling more accurate parsing
+of complex document layouts. To use this feature, you need to obtain an
+API key from [Google AI Studio](https://aistudio.google.com/apikey).
+
+**Integration with bibliometrix**: This package complements the science
+mapping analyses available in `bibliometrix` and its Shiny interface
+`biblioshiny`. If you want to perform content analysis within a
+user-friendly Shiny application with all the advantages of an
+interactive interface, simply install `bibliometrix` and launch
+`biblioshiny`, where you’ll find a dedicated **Content Analysis** menu
+that implements all the analyses and outputs of this library.
+
 ### What Makes It Unique?
 
 The package goes beyond simple PDF parsing by creating a multi-layered
@@ -149,7 +162,13 @@ Complete workflow analyzing a real scientific paper:
 library(contentanalysis)
 ```
 
-### Download example paper (open access)
+### Download example paper
+
+The paper is an open access article by Aria et al.:
+
+Aria, M., Cuccurullo, C., & Gnasso, A. (2021). A comparison among
+interpretative proposals for Random Forests. Machine Learning with
+Applications, 6, 100094.
 
 ``` r
 paper_url <- "https://raw.githubusercontent.com/massimoaria/contentanalysis/master/inst/examples/example_paper.pdf"
@@ -208,10 +227,10 @@ This single function call:
 ``` r
 analysis$summary
 #> $total_words_analyzed
-#> [1] 3894
+#> [1] 3473
 #> 
 #> $unique_words
-#> [1] 1429
+#> [1] 1312
 #> 
 #> $citations_extracted
 #> [1] 50
@@ -226,28 +245,27 @@ analysis$summary
 #> [1] 12
 #> 
 #> $lexical_diversity
-#> [1] 0.3669748
+#> [1] 0.3777714
 #> 
 #> $average_citation_context_length
-#> [1] 3221
+#> [1] 3186.16
 #> 
 #> $citation_density_per_1000_words
-#> [1] 5.96
+#> [1] 6.57
 #> 
 #> $references_parsed
 #> [1] 33
 #> 
 #> $citations_matched_to_refs
-#> [1] 42
+#> [1] 27
 #> 
 #> $match_quality
-#> # A tibble: 4 × 3
-#>   match_confidence            n percentage
-#>   <chr>                   <int>      <dbl>
-#> 1 high                       41         82
-#> 2 medium_multiple_matches     1          2
-#> 3 no_match_author             7         14
-#> 4 no_match_year               1          2
+#> # A tibble: 3 × 3
+#>   match_confidence     n percentage
+#>   <chr>            <int>      <dbl>
+#> 1 high                27         54
+#> 2 no_match_author     22         44
+#> 3 no_match_year        1          2
 #> 
 #> $citation_type_used
 #> [1] "author_year"
@@ -333,7 +351,7 @@ cat("Nodes:", stats$n_nodes, "\n")
 cat("Edges:", stats$n_edges, "\n")
 #> Edges: 48
 cat("Average distance:", stats$avg_distance, "characters\n")
-#> Average distance: 228 characters
+#> Average distance: 227 characters
 
 # Citations by section
 print(stats$section_distribution)
@@ -356,10 +374,10 @@ if (nrow(stats$multi_section_citations) > 0) {
 #> 1 (Haddouchi & Berrado, 2019)
 #> 2         (Meinshausen, 2010)
 #> 3                (Deng, 2019)
-#>                                                  sections n_sections
-#> 1 Related work, Visualization toolkits, Local explanation          3
-#> 2          Rule extraction, Experimental design, Analysis          3
-#> 3          Rule extraction, Experimental design, Analysis          3
+#>                                                         sections n_sections
+#> 1 Related work, Random forest extra information, Rule extraction          3
+#> 2                    Rule extraction, Comparison study, Analysis          3
+#> 3                    Rule extraction, Comparison study, Analysis          3
 ```
 
 ### Network Features
@@ -416,7 +434,7 @@ word_dist <- calculate_word_distribution(doc, method_terms)
 
 ``` r
 # Create and save the plot
-p <- plot_word_distribution(word_dist, plot_type = "line", smooth = TRUE, ,show_points = TRUE)
+p <- plot_word_distribution(word_dist, plot_type = "line", smooth = TRUE, show_points = TRUE)
 
 # Save as static image for GitHub
 if (!dir.exists("man/figures")) dir.create("man/figures", recursive = TRUE)
@@ -441,16 +459,16 @@ head(analysis$word_frequencies, 10)
 #> # A tibble: 10 × 4
 #>    word         n frequency  rank
 #>    <chr>    <int>     <dbl> <int>
-#>  1 model       47   0.0121      1
-#>  2 forest      46   0.0118      2
-#>  3 accuracy    43   0.0110      3
-#>  4 trees       42   0.0108      4
-#>  5 random      41   0.0105      5
-#>  6 learning    34   0.00873     6
-#>  7 data        31   0.00796     7
-#>  8 machine     31   0.00796     8
-#>  9 set         29   0.00745     9
-#> 10 variable    28   0.00719    10
+#>  1 model       45   0.0130      1
+#>  2 forest      42   0.0121      2
+#>  3 accuracy    40   0.0115      3
+#>  4 trees       38   0.0109      4
+#>  5 random      34   0.00979     5
+#>  6 learning    27   0.00777     6
+#>  7 set         27   0.00777     7
+#>  8 variable    26   0.00749     8
+#>  9 data        25   0.00720     9
+#> 10 rule        25   0.00720    10
 ```
 
 ### Citation co-occurrence data
@@ -518,17 +536,15 @@ head(analysis$citation_references_mapping[, c("citation_text_clean", "ref_author
 #> 1 (Mitchell, 1997)                         Mitchell    1997     high            
 #> 2 (Breiman, Friedman, Olshen, & Stone, 19… Breiman     1984     high            
 #> 3 https://doi.org/10.1016/j.mlwa.2021.100… <NA>        <NA>     no_match_year   
-#> 4 (Breiman, 2001)                          Breiman     2001     high            
+#> 4 (Breiman, 2001)                          <NA>        <NA>     no_match_author 
 #> 5 (see Breiman, 1996)                      <NA>        <NA>     no_match_author 
 #> 6 (Hastie, Tibshirani, & Friedman, 2009)   Hastie      2009     high
 
 # Match quality distribution
 table(analysis$citation_references_mapping$match_confidence)
 #> 
-#>                    high medium_multiple_matches         no_match_author 
-#>                      41                       1                       7 
-#>           no_match_year 
-#>                       1
+#>            high no_match_author   no_match_year 
+#>              27              22               1
 ```
 
 ### Finding citations to specific authors
@@ -555,26 +571,32 @@ if (!is.null(analysis$references_oa)) {
   # Analyze citation impact
   summary(analysis$references_oa$cited_by_count)
 }
-#>    Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
-#>      93     278    1706   11064    4528  110040
+#>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+#>     93.0    279.2   1712.5  11101.6   4573.8 110356.0
 ```
 
 ### Citations by section
 
 ``` r
 analysis$citation_metrics$section_distribution
-#> # A tibble: 9 × 3
-#>   section                             n percentage
-#>   <chr>                           <int>      <dbl>
-#> 1 Related work                        9         18
-#> 2 Introduction                        7         14
-#> 3 Experimental design                 6         12
-#> 4 Local explanation                   6         12
-#> 5 Size reduction                      6         12
-#> 6 Random forest extra information     5         10
-#> 7 Visualization toolkits              5         10
-#> 8 Analysis                            4          8
-#> 9 Rule extraction                     2          4
+#> # A tibble: 15 × 3
+#>    section                             n percentage
+#>    <fct>                           <int>      <dbl>
+#>  1 Preface                             0          0
+#>  2 Introduction                        7         14
+#>  3 Related work                        9         18
+#>  4 Internal processing approaches      0          0
+#>  5 Random forest extra information     6         12
+#>  6 Visualization toolkits              4          8
+#>  7 Post-Hoc approaches                 0          0
+#>  8 Size reduction                      6         12
+#>  9 Rule extraction                     3          6
+#> 10 Local explanation                   5         10
+#> 11 Comparison study                    2          4
+#> 12 Experimental design                 4          8
+#> 13 Analysis                            4          8
+#> 14 Conclusion                          0          0
+#> 15 Acknowledgment                      0          0
 ```
 
 ## Advanced: Word Distribution Analysis
@@ -705,12 +727,3 @@ Please report issues at:
 <https://github.com/massimoaria/contentanalysis/issues>
 
 Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Acknowledgments
-
-This package builds upon the excellent work of:
-
-- The pdftools team for PDF processing
-- The tidyverse team for data manipulation tools
-- The openalexR developers for OpenAlex API integration
-- CrossRef for providing open bibliographic data

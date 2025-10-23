@@ -34,6 +34,18 @@ analysis of scientific literature. It bridges the gap between raw PDF documents
 and structured, analyzable data by combining advanced text extraction, citation 
 analysis, and bibliometric enrichment from external databases.
 
+**AI-Enhanced PDF Import**: The package supports AI-assisted PDF text extraction 
+through Google's Gemini API, enabling more accurate parsing of complex document 
+layouts. To use this feature, you need to obtain an API key from 
+[Google AI Studio](https://aistudio.google.com/apikey).
+
+**Integration with bibliometrix**: This package complements the science mapping 
+analyses available in `bibliometrix` and its Shiny interface `biblioshiny`. If you 
+want to perform content analysis within a user-friendly Shiny application with all 
+the advantages of an interactive interface, simply install `bibliometrix` and launch 
+`biblioshiny`, where you'll find a dedicated **Content Analysis** menu that implements 
+all the analyses and outputs of this library.
+
 ### What Makes It Unique?
 
 The package goes beyond simple PDF parsing by creating a multi-layered analytical framework:
@@ -86,7 +98,7 @@ We'll use an open-access paper on Machine Learning with Applications:
 
 Aria, M., Cuccurullo, C., & Gnasso, A. (2021). **A comparison among interpretative proposals for Random Forests**. *Machine Learning with Applications*, 6, 100094.
 
-The paaper is available at: https://doi.org/10.1016/j.mlwa.2021.100094.
+The paper is available at: https://doi.org/10.1016/j.mlwa.2021.100094.
 
 **Abstract**:
 
