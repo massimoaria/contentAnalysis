@@ -60,7 +60,7 @@ The function creates a network where:
 \item \strong{Node border} is thicker (3px) for citations appearing in multiple sections
 \item \strong{Edges} connect citations that co-occur within the specified distance
 \item \strong{Edge width} decreases with distance (closer citations = thicker edges)
-\item \strong{Edge color} indicates distance: red (≤300 chars), blue (≤600 chars),
+\item \strong{Edge color} indicates distance: red (<=300 chars), blue (<=600 chars),
 gray (>600 chars)
 }
 

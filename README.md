@@ -257,14 +257,14 @@ analysis$summary
 #> [1] 33
 #> 
 #> $citations_matched_to_refs
-#> [1] 27
+#> [1] 43
 #> 
 #> $match_quality
 #> # A tibble: 3 × 3
 #>   match_confidence     n percentage
 #>   <chr>            <int>      <dbl>
-#> 1 high                27         54
-#> 2 no_match_author     22         44
+#> 1 high                43         86
+#> 2 no_match_author      6         12
 #> 3 no_match_year        1          2
 #> 
 #> $citation_type_used
@@ -536,15 +536,15 @@ head(analysis$citation_references_mapping[, c("citation_text_clean", "ref_author
 #> 1 (Mitchell, 1997)                         Mitchell    1997     high            
 #> 2 (Breiman, Friedman, Olshen, & Stone, 19… Breiman     1984     high            
 #> 3 https://doi.org/10.1016/j.mlwa.2021.100… <NA>        <NA>     no_match_year   
-#> 4 (Breiman, 2001)                          <NA>        <NA>     no_match_author 
-#> 5 (see Breiman, 1996)                      <NA>        <NA>     no_match_author 
+#> 4 (Breiman, 2001)                          Breiman, L. 2001     high            
+#> 5 (see Breiman, 1996)                      Breiman, L. 1996     high            
 #> 6 (Hastie, Tibshirani, & Friedman, 2009)   Hastie      2009     high
 
 # Match quality distribution
 table(analysis$citation_references_mapping$match_confidence)
 #> 
 #>            high no_match_author   no_match_year 
-#>              27              22               1
+#>              43               6               1
 ```
 
 ### Finding citations to specific authors
@@ -572,7 +572,7 @@ if (!is.null(analysis$references_oa)) {
   summary(analysis$references_oa$cited_by_count)
 }
 #>     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-#>     93.0    279.2   1712.5  11101.6   4573.8 110356.0
+#>     93.0    279.5   1712.5  11102.4   4573.8 110356.0
 ```
 
 ### Citations by section

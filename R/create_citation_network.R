@@ -44,7 +44,7 @@
 #'   \item \strong{Node border} is thicker (3px) for citations appearing in multiple sections
 #'   \item \strong{Edges} connect citations that co-occur within the specified distance
 #'   \item \strong{Edge width} decreases with distance (closer citations = thicker edges)
-#'   \item \strong{Edge color} indicates distance: red (≤300 chars), blue (≤600 chars),
+#'   \item \strong{Edge color} indicates distance: red (<=300 chars), blue (<=600 chars),
 #'     gray (>600 chars)
 #' }
 #'
@@ -78,11 +78,12 @@
 #' @importFrom stats na.omit
 #'
 #' @export
-create_citation_network <- function(citation_analysis_results,
-                                    max_distance = 1000,
-                                    min_connections = 1,
-                                    show_labels = TRUE) {
-
+create_citation_network <- function(
+  citation_analysis_results,
+  max_distance = 1000,
+  min_connections = 1,
+  show_labels = TRUE
+) {
   network_data <- citation_analysis_results$network_data
 
   if (is.null(network_data) || nrow(network_data) == 0) {
@@ -100,7 +101,10 @@ create_citation_network <- function(citation_analysis_results,
   }
 
   # Get unique citations
-  all_citation_texts <- unique(c(network_data_filtered$citation1, network_data_filtered$citation2))
+  all_citation_texts <- unique(c(
+    network_data_filtered$citation1,
+    network_data_filtered$citation2
+  ))
 
   # Get section information - aggregate by citation
   citations_with_sections <- citation_analysis_results$citations %>%
@@ -135,14 +139,22 @@ create_citation_network <- function(citation_analysis_results,
 
   # Calculate connections
   node_connections <- rbind(
-    data.frame(citation = network_data_filtered$citation1, stringsAsFactors = FALSE),
-    data.frame(citation = network_data_filtered$citation2, stringsAsFactors = FALSE)
+    data.frame(
+      citation = network_data_filtered$citation1,
+      stringsAsFactors = FALSE
+    ),
+    data.frame(
+      citation = network_data_filtered$citation2,
+      stringsAsFactors = FALSE
+    )
   ) %>%
     count(citation, name = "connections")
 
   nodes$connections <- sapply(nodes$citation_text, function(cite) {
     conn <- node_connections$connections[node_connections$citation == cite]
-    if (length(conn) == 0) return(0)
+    if (length(conn) == 0) {
+      return(0)
+    }
     return(conn[1])
   })
 
@@ -158,7 +170,7 @@ create_citation_network <- function(citation_analysis_results,
   }
 
   # Set node properties
-  nodes$size <- pmax(15, pmin(40, 15 + nodes$connections * 3))/2
+  nodes$size <- pmax(15, pmin(40, 15 + nodes$connections * 3)) / 2
 
   # Assign colors dynamically using section colors
   section_colors <- citation_analysis_results$section_colors
@@ -169,11 +181,14 @@ create_citation_network <- function(citation_analysis_results,
   nodes$group <- nodes$primary_section
 
   # Add transparency to node colors (85% opacity)
-  nodes$color <- sapply(section_colors[nodes$primary_section], function(hex_color) {
-    # Convert hex to rgba with transparency
-    rgb_vals <- col2rgb(hex_color)
-    sprintf("rgba(%d, %d, %d, 0.85)", rgb_vals[1], rgb_vals[2], rgb_vals[3])
-  })
+  nodes$color <- sapply(
+    section_colors[nodes$primary_section],
+    function(hex_color) {
+      # Convert hex to rgba with transparency
+      rgb_vals <- col2rgb(hex_color)
+      sprintf("rgba(%d, %d, %d, 0.85)", rgb_vals[1], rgb_vals[2], rgb_vals[3])
+    }
+  )
 
   # Add special border for multi-section nodes
   nodes$borderWidth <- ifelse(nodes$n_sections > 1, 3, 1)
@@ -182,16 +197,19 @@ create_citation_network <- function(citation_analysis_results,
   # Create title with complete information
   nodes$title <- paste0(
     nodes$citation_text,
-    "\n<br><b>Section(s):</b> ", nodes$sections,
-    ifelse(nodes$n_sections > 1,
-           paste0(" (", nodes$n_sections, " sections)"),
-           ""),
-    "\n<br><b>Connections:</b> ", nodes$connections
+    "\n<br><b>Section(s):</b> ",
+    nodes$sections,
+    ifelse(
+      nodes$n_sections > 1,
+      paste0(" (", nodes$n_sections, " sections)"),
+      ""
+    ),
+    "\n<br><b>Connections:</b> ",
+    nodes$connections
   )
 
   nodes <- nodes %>%
-    mutate(font.size = size,
-           font.vadjust = -0.7 * font.size)
+    mutate(font.size = size, font.vadjust = -0.7 * font.size)
 
   # Create edges
   edges <- data.frame(
@@ -211,20 +229,37 @@ create_citation_network <- function(citation_analysis_results,
   edges$width <- pmax(0.5, 3 - (edges$distance / 200))
 
   # Colors with transparency (30% opacity for greater transparency)
-  edges$color <- ifelse(edges$distance <= 300, "rgba(255, 111, 111, 0.3)",
-                        ifelse(edges$distance <= 600, "rgba(127, 179, 213, 0.3)",
-                               "rgba(204, 204, 204, 0.25)"))
+  edges$color <- ifelse(
+    edges$distance <= 300,
+    "rgba(255, 111, 111, 0.3)",
+    ifelse(
+      edges$distance <= 600,
+      "rgba(127, 179, 213, 0.3)",
+      "rgba(204, 204, 204, 0.25)"
+    )
+  )
 
   edges$title <- paste("Distance:", edges$distance, "characters")
 
   # Create network with Fruchterman-Reingold layout
-  network <- visNetwork(nodes, edges, type="full", smooth = TRUE, physics = FALSE) %>%
+  network <- visNetwork(
+    nodes,
+    edges,
+    type = "full",
+    smooth = TRUE,
+    physics = FALSE
+  ) %>%
     visIgraphLayout(layout = "layout_nicely", type = "full")
 
   # Configure options
   network <- network %>%
     visOptions(highlightNearest = TRUE) %>%
-    visInteraction(dragNodes = TRUE, dragView = TRUE, zoomView = TRUE, zoomSpeed = 0.2) %>%
+    visInteraction(
+      dragNodes = TRUE,
+      dragView = TRUE,
+      zoomView = TRUE,
+      zoomSpeed = 0.2
+    ) %>%
     visPhysics(enabled = FALSE) %>%
     visNodes(
       borderWidth = 1,

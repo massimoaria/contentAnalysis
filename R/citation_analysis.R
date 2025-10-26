@@ -15,49 +15,43 @@ normalize_author_name <- function(name) {
   name <- tolower(trimws(name))
 
   # Remove diacritics/accents using transliteration
-  # This handles cases like: Maïo -> Maio, José -> Jose, etc.
   name <- iconv(name, to = "ASCII//TRANSLIT")
 
   # If transliteration failed, fall back to character replacement
   if (is.na(name)) {
     name <- tolower(trimws(name))
-    # a variants: à á â ã ä å ā ă ą
+    # a variants
     name <- gsub(
       "[\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u0101\u0103\u0105]",
       "a",
       name
     )
-    # e variants: è é ê ë ē ė ę
+    # e variants
     name <- gsub("[\u00e8\u00e9\u00ea\u00eb\u0113\u0117\u0119]", "e", name)
-    # i variants: ì í î ï ī į ı
+    # i variants
     name <- gsub("[\u00ec\u00ed\u00ee\u00ef\u012b\u012f\u0131]", "i", name)
-    # o variants: ò ó ô õ ö ø ō ő
+    # o variants
     name <- gsub(
       "[\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8\u014d\u0151]",
       "o",
       name
     )
-    # u variants: ù ú û ü ū ű ų
+    # u variants
     name <- gsub("[\u00f9\u00fa\u00fb\u00fc\u016b\u0171\u0173]", "u", name)
-    # y variants: ý ÿ
+    # y variants
     name <- gsub("[\u00fd\u00ff]", "y", name)
-    # n variants: ñ ń
+    # n variants
     name <- gsub("[\u00f1\u0144]", "n", name)
-    # c variants: ç ć č
+    # c variants
     name <- gsub("[\u00e7\u0107\u010d]", "c", name)
-    # s variants: ś š ş
+    # s variants
     name <- gsub("[\u015b\u0161\u015f]", "s", name)
-    # z variants: ź ż ž
+    # z variants
     name <- gsub("[\u017a\u017c\u017e]", "z", name)
-    # ß -> ss
     name <- gsub("\u00df", "ss", name)
-    # æ -> ae
     name <- gsub("\u00e6", "ae", name)
-    # œ -> oe
     name <- gsub("\u0153", "oe", name)
-    # ł -> l
     name <- gsub("\u0142", "l", name)
-    # đ -> d
     name <- gsub("\u0111", "d", name)
   }
 

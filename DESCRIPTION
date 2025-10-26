@@ -44,7 +44,7 @@ Suggests:
     stringdist,
     testthat (>= 3.0.0),
     mockery
-URL: https://github.com/massimoaria/contentanalysis
+URL: https://github.com/massimoaria/contentanalysis, 
 BugReports: https://github.com/massimoaria/contentanalysis/issues
 VignetteBuilder: knitr
 Config/testthat/edition: 3
