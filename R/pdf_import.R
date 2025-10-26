@@ -763,7 +763,6 @@ pdf2txt_auto <- function(
         )
       }
     }
-    # }
   }
 
   return(result)

@@ -450,7 +450,7 @@ Do not include page numbers or repetitive header elements."
       # Get PDF info with error handling
       pdf_info_result <- tryCatch(
         {
-          pdf_info(pdf_path)
+          pdftools::pdf_info(pdf_path)
         },
         error = function(e) {
           warning("Failed to read PDF info: ", e$message)
@@ -482,7 +482,11 @@ Do not include page numbers or repetitive header elements."
 
         subset_result <- tryCatch(
           {
-            pdf_subset(pdf_path, pages = chunks[[i]], output = temp_pdf)
+            pdftools::pdf_subset(
+              pdf_path,
+              pages = chunks[[i]],
+              output = temp_pdf
+            )
             TRUE
           },
           error = function(e) {
@@ -614,11 +618,15 @@ merge_text_chunks_named <- function(
   # Split into lines
   lines <- strsplit(full_text, "\n", fixed = TRUE)[[1]]
 
-  # # Find section headers (lines starting with "# " followed by non-#)
-  # section_starts <- grep("^# [^#]", lines)
-
   # Find section headers (lines starting with "#" or "##")
-  section_starts <- grep("^##? [^#]", lines)
+  section_starts <- grep("^##? [A-Z]", lines)
+
+  # Check section validity (#): First row or previous row empty
+  is_valid <- !grepl("^# ", lines[section_starts]) |
+    section_starts == 1 |
+    c(FALSE, lines[section_starts[-1] - 1] == "")
+
+  section_starts <- section_starts[is_valid]
 
   if (length(section_starts) == 0) {
     warning("No section headers found. Returning full content.")

@@ -50,7 +50,6 @@
 #' @importFrom dplyr mutate select filter bind_rows rowwise ungroup arrange desc
 #' @importFrom stringr str_extract str_replace_all str_detect str_count str_to_lower str_replace str_trim
 match_citations_to_references <- function(citations_df, references_df) {
-
   if (nrow(citations_df) == 0 || nrow(references_df) == 0) {
     return(tibble::tibble(
       citation_id = character(),
@@ -65,25 +64,132 @@ match_citations_to_references <- function(citations_df, references_df) {
     ))
   }
 
-  # === FUNZIONE PER ESTRARRE COGNOME ===
-  # CrossRef restituisce autori nel formato "U Bititci" (iniziale + cognome)
-  # Questa funzione estrae solo il cognome
+  # === FUNCTION TO EXTRACT SURNAME ===
+  # CrossRef returns authors in variable formats:
+  # - "Surname, I." (e.g., "Zhao, D.")
+  # - "I Surname" or "II Surname" (e.g., "DM Blei")
+  # This function extracts only the surname
   extract_surname <- function(author_string) {
-    if (is.na(author_string)) return(NA_character_)
+    if (is.na(author_string)) {
+      return(NA_character_)
+    }
 
-    # Rimuovi spazi extra
+    # Remove extra spaces and trailing punctuation
     cleaned <- stringr::str_trim(author_string)
+    cleaned <- stringr::str_replace(cleaned, "\\.$", "")
 
-    # Estrai l'ultima parola (il cognome)
-    # Pattern modificato per includere caratteri Unicode (ö, é, etc.)
-    # \\p{L} = qualsiasi lettera Unicode
-    surname <- stringr::str_extract(cleaned, "[\\p{L}'-]+$")
+    # CASE 1: Format "Surname, I." or "Surname, I.I."
+    if (stringr::str_detect(cleaned, ",")) {
+      # Extract everything before the comma (the surname)
+      surname <- stringr::str_extract(cleaned, "^[\\p{L}'-]+")
+      return(stringr::str_to_lower(surname))
+    }
 
-    return(stringr::str_to_lower(surname))
+    # CASE 2: Format "I Surname" or "II Surname"
+    # Extract the last word (the surname) if there are at least 2 words
+    parts <- stringr::str_split(cleaned, "\\s+")[[1]]
+    if (length(parts) >= 2) {
+      surname <- parts[length(parts)]
+      return(stringr::str_to_lower(surname))
+    }
+
+    # CASE 3: A single word (probably just the surname)
+    return(stringr::str_to_lower(cleaned))
   }
 
-  # === PREPARAZIONE RIFERIMENTI ===
-  # Normalizza il secondo autore nei riferimenti
+  # === FUNCTION TO NORMALIZE NAMES (removes accents) ===
+  normalize_name <- function(name) {
+    if (is.na(name)) {
+      return(NA_character_)
+    }
+
+    # Remove common accents using Unicode escape sequences
+    # a variants: à á â ã ä å ā ă ą
+    name <- stringr::str_replace_all(
+      name,
+      "[\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u0101\u0103\u0105]",
+      "a"
+    )
+    # e variants: è é ê ë ē ė ę
+    name <- stringr::str_replace_all(
+      name,
+      "[\u00e8\u00e9\u00ea\u00eb\u0113\u0117\u0119]",
+      "e"
+    )
+    # i variants: ì í î ï ī į ı
+    name <- stringr::str_replace_all(
+      name,
+      "[\u00ec\u00ed\u00ee\u00ef\u012b\u012f\u0131]",
+      "i"
+    )
+    # o variants: ò ó ô õ ö ø ō ő
+    name <- stringr::str_replace_all(
+      name,
+      "[\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8\u014d\u0151]",
+      "o"
+    )
+    # u variants: ù ú û ü ū ű ų
+    name <- stringr::str_replace_all(
+      name,
+      "[\u00f9\u00fa\u00fb\u00fc\u016b\u0171\u0173]",
+      "u"
+    )
+    # y variants: ý ÿ
+    name <- stringr::str_replace_all(name, "[\u00fd\u00ff]", "y")
+    # n variants: ñ ń
+    name <- stringr::str_replace_all(name, "[\u00f1\u0144]", "n")
+    # c variants: ç ć č
+    name <- stringr::str_replace_all(name, "[\u00e7\u0107\u010d]", "c")
+    # s variants: ś š ş
+    name <- stringr::str_replace_all(name, "[\u015b\u0161\u015f]", "s")
+    # z variants: ź ż ž
+    name <- stringr::str_replace_all(name, "[\u017a\u017c\u017e]", "z")
+    # ß -> ss
+    name <- stringr::str_replace_all(name, "\u00df", "ss")
+    # æ -> ae
+    name <- stringr::str_replace_all(name, "\u00e6", "ae")
+    # œ -> oe
+    name <- stringr::str_replace_all(name, "\u0153", "oe")
+    # ł -> l
+    name <- stringr::str_replace_all(name, "\u0142", "l")
+    # đ -> d
+    name <- stringr::str_replace_all(name, "\u0111", "d")
+
+    return(stringr::str_to_lower(name))
+  }
+
+  # === FUNCTION TO REMOVE COMMON CITATION PREFIXES ===
+  remove_citation_prefixes <- function(text) {
+    # Remove common prefixes like "see", "e.g.", "cf.", "i.e.", etc.
+    text <- stringr::str_replace(
+      text,
+      "^\\(?(see|e\\.g\\.|cf\\.|i\\.e\\.|viz\\.|compare)\\s+",
+      ""
+    )
+    text <- stringr::str_trim(text)
+    return(text)
+  }
+
+  # === FUNCTION TO EXTRACT COMPOUND SURNAMES ===
+  # Handles surnames with prefixes like "Di Maio", "van Raan", "de Nito"
+  extract_compound_surname <- function(text) {
+    # Pattern to match compound surnames with common prefixes
+    # Matches patterns like: "Di Maio", "van Raan", "de Nito", "von der Leyen"
+    compound_pattern <- "^([Dd]i|[Dd]e|[Vv]an|[Vv]on|[Dd]er|[Dd]en|[Ll]a|[Ll]e|[Dd]el|[Dd]ella)\\s+([\\p{L}'-]+)"
+
+    if (stringr::str_detect(text, compound_pattern)) {
+      # Extract the full compound name
+      compound <- stringr::str_extract(text, compound_pattern)
+      return(compound)
+    }
+
+    # If not a compound name, extract first word
+    first_word <- stringr::str_extract(text, "^[\\p{L}'-]+")
+    return(first_word)
+  }
+
+  # === PREPARING REFERENCES ===
+  # Normalize the second author in the references
   if ("ref_second_author" %in% colnames(references_df)) {
     references_df <- references_df %>%
       dplyr::mutate(
@@ -97,47 +203,63 @@ match_citations_to_references <- function(citations_df, references_df) {
       )
   }
 
-  # Per riferimenti da CrossRef, estrai il cognome dal campo ref_authors
-  # e marca come non affidabili le info su autori multipli
+  # For references from CrossRef, extract the surname from the ref_authors field
+  # and mark info about multiple authors as unreliable
   if ("ref_source" %in% colnames(references_df)) {
     references_df <- references_df %>%
       dplyr::mutate(
-        # Per CrossRef, estrai cognome da ref_authors (es. "H Abdi" → "abdi")
+        # For CrossRef, extract surname from ref_authors (e.g., "H Abdi" -> "abdi")
         ref_first_author_surname = ifelse(
           ref_source == "crossref",
-          sapply(ref_authors, extract_surname),  # Usa ref_authors invece di ref_first_author
+          sapply(ref_authors, extract_surname), # Use ref_authors instead of ref_first_author
           ref_first_author_normalized
         ),
-        # Per CrossRef, n_authors non è affidabile (sempre 1)
+        # Add normalized version without accents
+        ref_first_author_normalized_no_accents = sapply(
+          ref_first_author_surname,
+          normalize_name
+        ),
+        # For CrossRef, n_authors is not reliable (always 1)
         n_authors = ifelse(ref_source == "crossref", NA_integer_, n_authors),
-        # Per CrossRef, non abbiamo il secondo autore
-        ref_second_author = ifelse(ref_source == "crossref", NA_character_, ref_second_author),
-        ref_second_author_normalized = ifelse(ref_source == "crossref", NA_character_,
-                                              ref_second_author_normalized)
+        # For CrossRef, we don't have the second author
+        ref_second_author = ifelse(
+          ref_source == "crossref",
+          NA_character_,
+          ref_second_author
+        ),
+        ref_second_author_normalized = ifelse(
+          ref_source == "crossref",
+          NA_character_,
+          ref_second_author_normalized
+        )
       )
   } else {
-    # Se non c'è ref_source, usa la normalizzazione standard
+    # If there is no ref_source, use standard normalization
     references_df <- references_df %>%
       dplyr::mutate(
-        ref_first_author_surname = ref_first_author_normalized
+        ref_first_author_surname = ref_first_author_normalized,
+        ref_first_author_normalized_no_accents = sapply(
+          ref_first_author_normalized,
+          normalize_name
+        )
       )
   }
 
-  # === SEPARAZIONE CITAZIONI NUMERATE E NARRATIVE ===
+  # === SEPARATING NUMBERED AND NARRATIVE CITATIONS ===
   numbered_citations <- citations_df %>%
     dplyr::filter(stringr::str_detect(citation_type, "^numbered_"))
 
   narrative_citations <- citations_df %>%
     dplyr::filter(!stringr::str_detect(citation_type, "^numbered_"))
 
-  # === MATCHING PER CITAZIONI NUMERATE ===
+  # === MATCHING FOR NUMBERED CITATIONS ===
   matched_numbered <- tibble::tibble()
 
   if (nrow(numbered_citations) > 0) {
     for (i in 1:nrow(numbered_citations)) {
       cite <- numbered_citations[i, ]
 
-      # Estrai i numeri dalla citazione
+      # Extract the numbers from the citation
       numbers <- stringr::str_extract_all(cite$citation_text_clean, "\\d+")[[1]]
 
       if (length(numbers) == 0) {
@@ -157,7 +279,7 @@ match_citations_to_references <- function(citations_df, references_df) {
         next
       }
 
-      # Per citazioni multiple, crea una riga per ogni numero
+      # For multiple citations, create a row for each number
       for (num in numbers) {
         ref_id_to_match <- paste0("REF_", num)
 
@@ -171,10 +293,10 @@ match_citations_to_references <- function(citations_df, references_df) {
               ref_full_text = matched_ref$ref_full_text,
               match_confidence = "high_numbered",
               ref_authors = matched_ref$ref_authors,
-              ref_year = as.character(matched_ref$ref_year),
+              ref_year = matched_ref$ref_year,
               cite_author = NA_character_,
               cite_second_author = NA_character_,
-              cite_year = as.character(matched_ref$ref_year),
+              cite_year = matched_ref$ref_year,
               cite_has_etal = FALSE
             )
         } else {
@@ -197,28 +319,52 @@ match_citations_to_references <- function(citations_df, references_df) {
     }
   }
 
-  # === MATCHING PER CITAZIONI NARRATIVE ===
+  # === MATCHING FOR NARRATIVE CITATIONS ===
   matched_narrative <- tibble::tibble()
 
   if (nrow(narrative_citations) > 0) {
-    # Funzione per estrarre informazioni dalla citazione
+    # Function to extract information from the citation
     extract_citation_info <- function(citation_text) {
+      # Remove parentheses
       clean_cite <- stringr::str_replace_all(citation_text, "^\\(|\\)$", "")
 
+      # Remove common citation prefixes (see, e.g., cf., etc.)
+      clean_cite <- remove_citation_prefixes(clean_cite)
+
+      # Extract year
       year <- stringr::str_extract(clean_cite, "\\d{4}[a-z]?")
+
+      # Check for et al. and and/&
       has_etal <- stringr::str_detect(clean_cite, "et\\s+al\\.")
       has_and <- stringr::str_detect(clean_cite, "\\s+and\\s+|\\s+&\\s+")
 
-      author <- stringr::str_extract(clean_cite, "^[A-Za-z'-]+")
+      # Extract first author (handle compound surnames and accents)
+      # Use Unicode character class \p{L} to include accented characters
+      author <- extract_compound_surname(clean_cite)
       author_normalized <- stringr::str_to_lower(author)
 
+      # Extract second author if present
       second_author <- NA_character_
       if (has_and && !has_etal) {
-        second_author <- stringr::str_extract(clean_cite, "(?:and|&)\\s+([A-Za-z'-]+)")
-        second_author <- stringr::str_replace(second_author, "^(?:and|&)\\s+", "")
+        # Extract text after "and" or "&"
+        after_and <- stringr::str_extract(
+          clean_cite,
+          "(?:and|&)\\s+([\\p{L}][\\p{L}\\s'-]+?)(?:,|\\s+\\()"
+        )
+
+        if (!is.na(after_and)) {
+          # Clean up the extracted text
+          second_author <- stringr::str_replace(after_and, "^(?:and|&)\\s+", "")
+          second_author <- stringr::str_replace(second_author, "[,\\(].*$", "")
+          second_author <- stringr::str_trim(second_author)
+
+          # Handle compound surnames for second author too
+          second_author <- extract_compound_surname(second_author)
+        }
       }
       second_author_normalized <- stringr::str_to_lower(second_author)
 
+      # Estimate number of authors
       n_cite_authors <- if (has_etal) {
         99
       } else if (has_and) {
@@ -239,13 +385,16 @@ match_citations_to_references <- function(citations_df, references_df) {
       )
     }
 
-    # Estrai informazioni da tutte le citazioni
+    # Extract information from all citations
     citations_info <- narrative_citations %>%
       dplyr::rowwise() %>%
       dplyr::mutate(
         cite_info = list(extract_citation_info(citation_text_clean)),
         cite_author = cite_info$author,
         cite_author_normalized = cite_info$author_normalized,
+        cite_author_normalized_no_accents = normalize_name(
+          cite_info$author_normalized
+        ),
         cite_second_author = cite_info$second_author,
         cite_second_author_normalized = cite_info$second_author_normalized,
         cite_year = cite_info$year,
@@ -256,11 +405,11 @@ match_citations_to_references <- function(citations_df, references_df) {
       dplyr::select(-cite_info) %>%
       dplyr::ungroup()
 
-    # Match ogni citazione
+    # Match each citation
     for (i in 1:nrow(citations_info)) {
       cite <- citations_info[i, ]
 
-      # Verifica informazioni minime
+      # Check for minimum information
       if (is.na(cite$cite_author_normalized) || is.na(cite$cite_year)) {
         matched_row <- cite %>%
           dplyr::mutate(
@@ -274,9 +423,20 @@ match_citations_to_references <- function(citations_df, references_df) {
         next
       }
 
-      # 1. Filtra per anno
+      # 1. Filter by year
       year_matches <- references_df %>%
         dplyr::filter(!is.na(ref_year), ref_year == cite$cite_year)
+
+      # If no match is found and the year has a suffix (2011a, 2011b),
+      # try removing the suffix
+      if (
+        nrow(year_matches) == 0 &&
+          stringr::str_detect(cite$cite_year, "\\d{4}[a-z]$")
+      ) {
+        year_no_suffix <- stringr::str_replace(cite$cite_year, "[a-z]$", "")
+        year_matches <- references_df %>%
+          dplyr::filter(!is.na(ref_year), ref_year == year_no_suffix)
+      }
 
       if (nrow(year_matches) == 0) {
         matched_row <- cite %>%
@@ -291,21 +451,37 @@ match_citations_to_references <- function(citations_df, references_df) {
         next
       }
 
-      # 2. Match primo autore (esatto) usando ref_first_author_surname
-      # Questo funziona sia per CrossRef (solo cognome) che per riferimenti parsati
+      # 2. Match first author (exact) using ref_first_author_surname
+      # This works for both CrossRef (surname only) and parsed references
       author_matches <- year_matches %>%
         dplyr::filter(
           !is.na(ref_first_author_surname),
           ref_first_author_surname == cite$cite_author_normalized
         )
 
-      # 3. Se non trova match esatto, prova fuzzy matching
+      # 3. If no exact match is found, try fuzzy matching with normalized names (without accents)
+      if (nrow(author_matches) == 0) {
+        author_matches <- year_matches %>%
+          dplyr::filter(
+            !is.na(ref_first_author_normalized_no_accents),
+            ref_first_author_normalized_no_accents ==
+              cite$cite_author_normalized_no_accents
+          )
+      }
+
+      # 4. If still no match, try fuzzy matching with substring
       if (nrow(author_matches) == 0) {
         fuzzy_matches <- year_matches %>%
           dplyr::filter(
             !is.na(ref_first_author_surname),
-            stringr::str_detect(ref_first_author_surname, cite$cite_author_normalized) |
-              stringr::str_detect(cite$cite_author_normalized, ref_first_author_surname)
+            stringr::str_detect(
+              ref_first_author_surname,
+              cite$cite_author_normalized
+            ) |
+              stringr::str_detect(
+                cite$cite_author_normalized,
+                ref_first_author_surname
+              )
           )
 
         if (nrow(fuzzy_matches) > 0) {
@@ -324,23 +500,49 @@ match_citations_to_references <- function(citations_df, references_df) {
         }
       }
 
-      # 4. Disambiguazione
+      # 5. Disambiguation
       final_match <- NULL
       confidence <- "high"
 
       if (nrow(author_matches) == 1) {
-        # Match unico: verifica solo consistenza et al. se abbiamo l'info
+        # Single match: only check "et al." consistency if we have the info
         final_match <- author_matches[1, ]
 
-        if (cite$cite_has_etal && !is.na(final_match$n_authors) && final_match$n_authors < 3) {
+        if (
+          cite$cite_has_etal &&
+            !is.na(final_match$n_authors) &&
+            final_match$n_authors < 3
+        ) {
           confidence <- "medium_etal_inconsistent"
         }
-
       } else {
-        # Match multipli: disambigua
+        # Multiple matches: disambiguate
 
-        # A. Prova con secondo autore (solo se disponibile nel riferimento)
-        if (!is.na(cite$cite_second_author_normalized)) {
+        # A. If the citation has an alphabetical suffix (2011a, 2011b),
+        # sort the matches by ref_id and choose based on the suffix
+        if (stringr::str_detect(cite$cite_year, "\\d{4}[a-z]$")) {
+          suffix <- stringr::str_extract(cite$cite_year, "[a-z]$")
+          # Sort by ref_id consistently
+          author_matches <- author_matches %>%
+            dplyr::arrange(ref_id)
+
+          # Convert suffix to index: 'a'=1, 'b'=2, 'c'=3, etc.
+          suffix_index <- which(letters == suffix)
+
+          if (suffix_index <= nrow(author_matches)) {
+            final_match <- author_matches[suffix_index, ]
+            confidence <- "high_suffix_disambiguated"
+          } else {
+            # If the suffix is beyond the number of matches, take the last one
+            final_match <- author_matches[nrow(author_matches), ]
+            confidence <- "medium_suffix_out_of_range"
+          }
+        }
+
+        # B. Try with second author (only if available in the reference)
+        if (
+          is.null(final_match) && !is.na(cite$cite_second_author_normalized)
+        ) {
           second_match <- author_matches %>%
             dplyr::filter(
               !is.na(ref_second_author_normalized),
@@ -356,7 +558,7 @@ match_citations_to_references <- function(citations_df, references_df) {
           }
         }
 
-        # B. Euristica et al. (solo se n_authors è disponibile)
+        # C. "et al." heuristic (only if n_authors is available)
         if (is.null(final_match) && cite$cite_has_etal) {
           etal_candidates <- author_matches %>%
             dplyr::filter(!is.na(n_authors), n_authors >= 3) %>%
@@ -366,20 +568,20 @@ match_citations_to_references <- function(citations_df, references_df) {
             final_match <- etal_candidates[1, ]
             confidence <- "medium_etal_heuristic"
           } else {
-            # Per CrossRef, accetta il primo match anche senza info su n_authors
+            # For CrossRef, accept the first match even without n_authors info
             final_match <- author_matches[1, ]
             confidence <- "medium_crossref_etal"
           }
         }
 
-        # C. Fallback: prendi il primo
+        # D. Fallback: take the first one
         if (is.null(final_match)) {
           final_match <- author_matches[1, ]
           confidence <- "medium_multiple_matches"
         }
       }
 
-      # Crea riga con match
+      # Create row with match
       matched_row <- cite %>%
         dplyr::mutate(
           matched_ref_id = final_match$ref_id,
@@ -393,7 +595,7 @@ match_citations_to_references <- function(citations_df, references_df) {
     }
   }
 
-  # === COMBINA RISULTATI ===
+  # === COMBINE RESULTS ===
   matched_citations <- dplyr::bind_rows(matched_numbered, matched_narrative)
 
   result <- matched_citations %>%

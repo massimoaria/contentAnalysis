@@ -1,3 +1,243 @@
+#' Normalize author name for robust comparison
+#'
+#' Removes diacritics, converts to lowercase, handles prefixes (van, de, di, etc.),
+#' removes hyphens and extra whitespace for better matching
+#'
+#' @param name Character string with author name
+#' @return Normalized name string
+#' @keywords internal
+normalize_author_name <- function(name) {
+  if (is.na(name) || name == "" || is.null(name)) {
+    return("")
+  }
+
+  # Convert to lowercase and trim
+  name <- tolower(trimws(name))
+
+  # Remove diacritics/accents using transliteration
+  # This handles cases like: Maïo -> Maio, José -> Jose, etc.
+  name <- iconv(name, to = "ASCII//TRANSLIT")
+
+  # If transliteration failed, fall back to character replacement
+  if (is.na(name)) {
+    name <- tolower(trimws(name))
+    # a variants: à á â ã ä å ā ă ą
+    name <- gsub(
+      "[\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u0101\u0103\u0105]",
+      "a",
+      name
+    )
+    # e variants: è é ê ë ē ė ę
+    name <- gsub("[\u00e8\u00e9\u00ea\u00eb\u0113\u0117\u0119]", "e", name)
+    # i variants: ì í î ï ī į ı
+    name <- gsub("[\u00ec\u00ed\u00ee\u00ef\u012b\u012f\u0131]", "i", name)
+    # o variants: ò ó ô õ ö ø ō ő
+    name <- gsub(
+      "[\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8\u014d\u0151]",
+      "o",
+      name
+    )
+    # u variants: ù ú û ü ū ű ų
+    name <- gsub("[\u00f9\u00fa\u00fb\u00fc\u016b\u0171\u0173]", "u", name)
+    # y variants: ý ÿ
+    name <- gsub("[\u00fd\u00ff]", "y", name)
+    # n variants: ñ ń
+    name <- gsub("[\u00f1\u0144]", "n", name)
+    # c variants: ç ć č
+    name <- gsub("[\u00e7\u0107\u010d]", "c", name)
+    # s variants: ś š ş
+    name <- gsub("[\u015b\u0161\u015f]", "s", name)
+    # z variants: ź ż ž
+    name <- gsub("[\u017a\u017c\u017e]", "z", name)
+    # ß -> ss
+    name <- gsub("\u00df", "ss", name)
+    # æ -> ae
+    name <- gsub("\u00e6", "ae", name)
+    # œ -> oe
+    name <- gsub("\u0153", "oe", name)
+    # ł -> l
+    name <- gsub("\u0142", "l", name)
+    # đ -> d
+    name <- gsub("\u0111", "d", name)
+  }
+
+  # Remove common prefixes (van, de, di, von, der, den, la, le, el, al-, etc.)
+  # These are often inconsistent between sources
+  name <- gsub(
+    "^(van |de |di |von |der |den |la |le |el |al-|van der |van den |van de |de la |de los |de las )",
+    "",
+    name
+  )
+
+  # Remove hyphens and underscores (often inconsistent)
+  name <- gsub("[-_]", " ", name)
+
+  # Remove leading/trailing punctuation and spaces
+  name <- gsub("^[^a-z0-9]+|[^a-z0-9]+$", "", name)
+
+  # Collapse multiple spaces into one
+  name <- gsub("\\s+", " ", name)
+
+  # Final trim
+  name <- trimws(name)
+
+  return(name)
+}
+
+#' Compare two author names with fuzzy matching
+#'
+#' Determines if two author names refer to the same person, accounting for
+#' typos, prefix variations, accent differences, and minor spelling variations
+#'
+#' @param name1 First author name
+#' @param name2 Second author name
+#' @param threshold Similarity threshold (0-1). Default 0.8
+#' @return Logical indicating if names match
+#' @keywords internal
+author_names_match <- function(name1, name2, threshold = 0.8) {
+  # Handle empty or NA values
+  if (is.na(name1) || is.na(name2) || name1 == "" || name2 == "") {
+    return(FALSE)
+  }
+
+  # Normalize both names
+  norm1 <- normalize_author_name(name1)
+  norm2 <- normalize_author_name(name2)
+
+  # Check if empty after normalization
+  if (norm1 == "" || norm2 == "") {
+    return(FALSE)
+  }
+
+  # Exact match after normalization
+  if (norm1 == norm2) {
+    return(TRUE)
+  }
+
+  # Check if one is substring of the other (handles "eck" vs "van eck")
+  if (grepl(norm1, norm2, fixed = TRUE) || grepl(norm2, norm1, fixed = TRUE)) {
+    return(TRUE)
+  }
+
+  # Check for common typos/transpositions
+  # Example: leydesdorff vs leydesdroff
+  if (nchar(norm1) == nchar(norm2)) {
+    # Count different characters
+    chars1 <- strsplit(norm1, "")[[1]]
+    chars2 <- strsplit(norm2, "")[[1]]
+    n_diff <- sum(chars1 != chars2)
+
+    # Allow up to 2 character differences for names > 5 chars
+    if (nchar(norm1) > 5 && n_diff <= 2) {
+      return(TRUE)
+    }
+
+    # Allow 1 character difference for shorter names
+    if (nchar(norm1) <= 5 && n_diff <= 1) {
+      return(TRUE)
+    }
+  }
+
+  # Compute Levenshtein distance for more sophisticated matching
+  # Only if names are reasonably similar in length
+  len_ratio <- min(nchar(norm1), nchar(norm2)) / max(nchar(norm1), nchar(norm2))
+
+  if (len_ratio >= 0.7) {
+    # Use stringdist if available, otherwise use simple approach
+    if (requireNamespace("stringdist", quietly = TRUE)) {
+      dist <- stringdist::stringdist(norm1, norm2, method = "lv")
+      max_len <- max(nchar(norm1), nchar(norm2))
+      similarity <- 1 - (dist / max_len)
+
+      if (similarity >= threshold) {
+        return(TRUE)
+      }
+    } else {
+      # Simple character overlap similarity
+      chars1 <- unique(strsplit(norm1, "")[[1]])
+      chars2 <- unique(strsplit(norm2, "")[[1]])
+      overlap <- length(intersect(chars1, chars2))
+      union_size <- length(union(chars1, chars2))
+
+      if (overlap / union_size >= threshold) {
+        return(TRUE)
+      }
+    }
+  }
+
+  return(FALSE)
+}
+
+#' Check if author conflict is real or just normalization difference
+#'
+#' Determines whether a conflict between CrossRef and OpenAlex author names
+#' is a genuine conflict (different authors) or just a normalization issue
+#'
+#' @param crossref_author Author name from CrossRef
+#' @param openalex_author Author name from OpenAlex
+#' @param doi DOI for logging purposes
+#' @param verbose Logical, whether to print conflict messages
+#' @return List with:
+#'   \itemize{
+#'     \item is_real_conflict: Logical, TRUE if authors are different
+#'     \item message: Description of the conflict type
+#'   }
+#' @keywords internal
+check_author_conflict <- function(
+  crossref_author,
+  openalex_author,
+  doi = "",
+  verbose = TRUE
+) {
+  # Handle empty values
+  if (is.na(crossref_author) || crossref_author == "") {
+    return(list(
+      is_real_conflict = FALSE,
+      message = "CrossRef author missing"
+    ))
+  }
+
+  if (is.na(openalex_author) || openalex_author == "") {
+    return(list(
+      is_real_conflict = FALSE,
+      message = "OpenAlex author missing"
+    ))
+  }
+
+  # Check if names match
+  if (author_names_match(crossref_author, openalex_author)) {
+    if (verbose) {
+      message(sprintf(
+        "NOT A CONFLICT for DOI %s: CrossRef='%s' vs OpenAlex='%s' - same author (using OpenAlex)",
+        doi,
+        crossref_author,
+        openalex_author
+      ))
+    }
+
+    return(list(
+      is_real_conflict = FALSE,
+      message = "Same author (normalization difference)"
+    ))
+  }
+
+  # Real conflict detected
+  if (verbose) {
+    message(sprintf(
+      "REAL AUTHOR CONFLICT for DOI %s: CrossRef='%s' vs OpenAlex='%s' - keeping CrossRef",
+      doi,
+      crossref_author,
+      openalex_author
+    ))
+  }
+
+  return(list(
+    is_real_conflict = TRUE,
+    message = "Different authors"
+  ))
+}
+
+
 #' Map citations to document segments or sections
 #'
 #' @param citations_df Data frame with citations and their positions
@@ -181,6 +421,7 @@ map_citations_to_segments <- function(
 #' @export
 #' @importFrom tibble tibble
 #' @importFrom dplyr mutate select filter bind_rows arrange desc left_join count rowwise ungroup slice_head rename row_number
+#' @importFrom purrr map_lgl
 #' @importFrom stringr str_replace_all str_trim str_locate_all str_sub str_detect str_extract str_split str_extract_all str_length str_count str_remove str_squish str_to_title str_to_lower
 #' @importFrom tidytext unnest_tokens
 #' @importFrom openalexR oa_fetch
@@ -822,9 +1063,10 @@ analyze_scientific_content <- function(
             references_oa <- add_reference_info(references_oa)
             parsed_references <- complete_references_from_oa(
               parsed_references,
-              references_oa
+              references_oa,
+              verbose = FALSE
             ) %>%
-              # replace ref_full_text with ref_full_text2 when NA
+              # replace ref_full_text with ref_full_text2 when present in OA
               mutate(
                 ref_full_text = ifelse(
                   is.na(ref_full_text) | ref_full_text == "",
@@ -861,6 +1103,23 @@ analyze_scientific_content <- function(
       nrow(parsed_references) > 0 &&
       nrow(all_citations) > 0
   ) {
+    if (citation_type %in% c("numeric_superscript", "numeric_brackets")) {
+      ## remove citation with an associated numeric label grater then the maximum
+      maximum_label <- nrow(parsed_references)
+      # remove all citation with label greater than maximum_label from all_citations data frame
+
+      # Extract numbers from citation_text_clean e filter only numbered_ type citations
+      all_citations <- all_citations %>%
+        mutate(
+          citation_numbers = str_extract_all(citation_text_clean, "\\d+")
+        ) %>%
+        dplyr::filter(
+          !(str_detect(citation_type, "^numbered_") &
+            map_lgl(citation_numbers, ~ any(as.numeric(.x) > maximum_label)))
+        ) %>%
+        select(-citation_numbers)
+    }
+
     citation_references_mapping <- match_citations_to_references(
       citations_df = all_citations %>%
         dplyr::select(
@@ -1218,8 +1477,25 @@ add_reference_info <- function(df) {
   return(df)
 }
 
-complete_references_from_oa <- function(references, references_oa) {
-  # Funzione helper per estrarre il cognome
+#' Complete references from OpenAlex with intelligent conflict resolution
+#'
+#' Merges reference data from CrossRef and OpenAlex, using OpenAlex data when
+#' available unless there is a REAL conflict in the first author name.
+#' Only genuine author conflicts (different people) trigger CrossRef precedence.
+#' Normalization differences (prefixes, accents, typos) are NOT considered conflicts.
+#'
+#' @param references Data frame with references from CrossRef
+#' @param references_oa Data frame with references from OpenAlex
+#' @param verbose Logical, whether to print conflict messages. Default TRUE
+#' @return Updated references data frame
+#' @keywords internal
+#' @importFrom dplyr mutate
+complete_references_from_oa <- function(
+  references,
+  references_oa,
+  verbose = TRUE
+) {
+  # Helper function to extract surname from full name
   get_surname <- function(full_name) {
     if (is.na(full_name) || full_name == "") {
       return(NA)
@@ -1228,7 +1504,7 @@ complete_references_from_oa <- function(references, references_oa) {
     return(parts[length(parts)])
   }
 
-  # Funzione helper per estrarre l'iniziale del nome
+  # Helper function to extract initials from first names
   get_initial <- function(full_name) {
     if (is.na(full_name) || full_name == "") {
       return("")
@@ -1242,7 +1518,7 @@ complete_references_from_oa <- function(references, references_oa) {
     return(paste0(initials, collapse = "."))
   }
 
-  # Funzione helper per formattare gli autori
+  # Helper function to format authors list
   format_authors <- function(authorships) {
     if (is.null(authorships) || nrow(authorships) == 0) {
       return(NA)
@@ -1262,7 +1538,7 @@ complete_references_from_oa <- function(references, references_oa) {
     return(paste(formatted_authors, collapse = ", "))
   }
 
-  # Funzione helper per estrarre il primo autore
+  # Helper function to get first author
   get_first_author <- function(authorships) {
     if (is.null(authorships) || nrow(authorships) == 0) {
       return(NA)
@@ -1270,7 +1546,7 @@ complete_references_from_oa <- function(references, references_oa) {
     return(get_surname(authorships$display_name[1]))
   }
 
-  # Normalizza i DOI per il matching (rimuove spazi, converte in minuscolo)
+  # Normalize DOIs for matching
   references$doi_clean <- tolower(trimws(gsub(
     "https://doi.org/",
     "",
@@ -1282,7 +1558,7 @@ complete_references_from_oa <- function(references, references_oa) {
     references_oa$doi
   )))
 
-  # Loop attraverso ogni riga di references
+  # Loop through each reference
   for (i in 1:nrow(references)) {
     doi_ref <- references$doi_clean[i]
 
@@ -1290,69 +1566,154 @@ complete_references_from_oa <- function(references, references_oa) {
       next
     }
 
-    # Trova la corrispondenza in references_oa
+    # Find match in OpenAlex
     match_idx <- which(references_oa$doi_clean == doi_ref)
 
-    if (length(match_idx) > 0) {
-      match_idx <- match_idx[1] # Prende la prima corrispondenza
+    if (length(match_idx) == 0) {
+      next
+    }
 
-      # Completa ref_full_text se NA
-      # if (is.na(references$ref_full_text[i])) {
-      references$ref_full_text[i] <- references_oa$ref_full_name[match_idx]
-      # }
+    match_idx <- match_idx[1] # Take first match if multiple
 
-      # Completa ref_authors se NA
-      # if (is.na(references$ref_authors[i]) || references$ref_authors[i] == "") {
-      references$ref_authors[i] <- format_authors(
-        references_oa$authorships[[match_idx]]
-      )
-      # }
+    # ============================================
+    # Extract data from OpenAlex
+    # ============================================
+    oa_full_text <- references_oa$ref_full_name[match_idx]
+    oa_authors <- format_authors(references_oa$authorships[[match_idx]])
+    oa_year <- as.character(references_oa$publication_year[match_idx])
+    oa_journal <- references_oa$source_display_name[match_idx]
+    oa_first_author <- get_first_author(references_oa$authorships[[match_idx]])
+    oa_n_authors <- references_oa$n_authors[match_idx]
 
-      # Completa ref_year se NA
-      # if (is.na(references$ref_year[i]) || references$ref_year[i] == "") {
-      references$ref_year[i] <- as.character(
-        references_oa$publication_year[match_idx]
-      )
-      # }
+    # ============================================
+    # Check for author conflict using intelligent matching
+    # ============================================
+    crossref_first_author <- references$ref_first_author_normalized[i]
 
-      # Completa ref_journal se NA
-      # if (is.na(references$ref_journal[i]) || references$ref_journal[i] == "") {
-      references$ref_journal[i] <- references_oa$source_display_name[
-        match_idx
-      ]
-      # }
+    # Check if there's a real conflict
+    conflict_check <- check_author_conflict(
+      crossref_first_author,
+      oa_first_author,
+      doi = doi_ref,
+      verbose = verbose
+    )
 
-      # Completa ref_first_author se NA
-      # if (
-      #   is.na(references$ref_first_author[i]) ||
-      #     references$ref_first_author[i] == ""
-      # ) {
-      references$ref_first_author[i] <- get_first_author(
-        references_oa$authorships[[match_idx]]
-      )
-      # }
+    # ============================================
+    # Decision logic
+    # ============================================
+    use_openalex <- FALSE
 
-      # Completa ref_first_author_normalized se NA
-      # if (
-      #   is.na(references$ref_first_author_normalized[i]) ||
-      #     references$ref_first_author_normalized[i] == ""
-      # ) {
-      first_auth <- get_first_author(references_oa$authorships[[match_idx]])
-      if (!is.na(first_auth)) {
+    if (is.na(crossref_first_author) || crossref_first_author == "") {
+      # CASE 1: CrossRef has no first author -> always use OpenAlex
+      use_openalex <- TRUE
+    } else if (!conflict_check$is_real_conflict) {
+      # CASE 2: No real conflict (same author or normalization difference) -> use OpenAlex
+      use_openalex <- TRUE
+    } else {
+      # CASE 3: Real conflict (different authors) -> keep CrossRef
+      use_openalex <- FALSE
+    }
+
+    # ============================================
+    # Apply the decision
+    # ============================================
+    if (use_openalex) {
+      # Use OpenAlex data (more complete and accurate)
+      if (!is.na(oa_full_text) && oa_full_text != "") {
+        references$ref_full_text[i] <- oa_full_text
+      }
+
+      if (!is.na(oa_authors) && oa_authors != "") {
+        references$ref_authors[i] <- oa_authors
+      }
+
+      if (!is.na(oa_year) && oa_year != "") {
+        references$ref_year[i] <- oa_year
+      }
+
+      if (!is.na(oa_journal) && oa_journal != "") {
+        references$ref_journal[i] <- oa_journal
+      }
+
+      if (!is.na(oa_first_author) && oa_first_author != "") {
+        references$ref_first_author[i] <- oa_first_author
         references$ref_first_author_normalized[i] <- tolower(trimws(
-          first_auth
+          oa_first_author
         ))
       }
-      # }
 
-      # Completa n_authors se NA
-      # if (is.na(references$n_authors[i])) {
-      references$n_authors[i] <- references_oa$n_authors[match_idx]
-      # }
+      if (!is.na(oa_n_authors)) {
+        references$n_authors[i] <- oa_n_authors
+      }
+    } else {
+      # Keep CrossRef, but fill in missing fields from OpenAlex
+      if (is.na(references$ref_year[i]) || references$ref_year[i] == "") {
+        if (!is.na(oa_year) && oa_year != "") {
+          references$ref_year[i] <- oa_year
+        }
+      }
+
+      if (is.na(references$ref_journal[i]) || references$ref_journal[i] == "") {
+        if (!is.na(oa_journal) && oa_journal != "") {
+          references$ref_journal[i] <- oa_journal
+        }
+      }
+
+      if (is.na(references$n_authors[i])) {
+        if (!is.na(oa_n_authors)) {
+          references$n_authors[i] <- oa_n_authors
+        }
+      }
     }
+
+    # Always save ref_full_text2 from OpenAlex for reference
+    references$ref_full_text2[i] <- oa_full_text
   }
 
+  # Clean up temporary column
   references$doi_clean <- NULL
 
   return(references)
+}
+
+# Helper function to extract first name initials
+get_initial <- function(full_name) {
+  if (is.na(full_name) || full_name == "") {
+    return("")
+  }
+  parts <- strsplit(full_name, " ")[[1]]
+  if (length(parts) <= 1) {
+    return("")
+  }
+  first_names <- parts[-length(parts)]
+  initials <- sapply(first_names, function(x) substr(x, 1, 1))
+  return(paste0(initials, collapse = "."))
+}
+
+# Helper function to format authors
+format_authors <- function(authorships) {
+  if (is.null(authorships) || nrow(authorships) == 0) {
+    return(NA)
+  }
+
+  authors <- authorships$display_name
+  formatted_authors <- sapply(authors, function(author) {
+    surname <- get_surname(author)
+    initial <- get_initial(author)
+    if (!is.na(initial) && initial != "") {
+      return(paste0(surname, ", ", initial, "."))
+    } else {
+      return(surname)
+    }
+  })
+
+  return(paste(formatted_authors, collapse = ", "))
+}
+
+# Helper function to extract the first author
+get_first_author <- function(authorships) {
+  if (is.null(authorships) || nrow(authorships) == 0) {
+    return(NA)
+  }
+  return(get_surname(authorships$display_name[1]))
 }
