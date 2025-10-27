@@ -2,7 +2,7 @@
 
 library(testthat)
 library(tibble)
-library(dplyr)
+#library(dplyr)
 
 # ============================================================================
 # normalize_references_text() - Internal Function Tests

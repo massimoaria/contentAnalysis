@@ -1,6 +1,7 @@
 # Test file for create_citation_network function
 library(testthat)
-library(dplyr)
+#library(dplyr)
+library(igraph)
 library(visNetwork)
 library(stringr)
 
@@ -8,16 +9,36 @@ library(stringr)
 create_mock_citation_results <- function() {
   list(
     network_data = data.frame(
-      citation1 = c("Smith et al. (2020)", "Jones et al. (2019)", "Smith et al. (2020)", "Brown et al. (2021)"),
-      citation2 = c("Jones et al. (2019)", "Brown et al. (2021)", "Brown et al. (2021)", "Davis et al. (2022)"),
+      citation1 = c(
+        "Smith et al. (2020)",
+        "Jones et al. (2019)",
+        "Smith et al. (2020)",
+        "Brown et al. (2021)"
+      ),
+      citation2 = c(
+        "Jones et al. (2019)",
+        "Brown et al. (2021)",
+        "Brown et al. (2021)",
+        "Davis et al. (2022)"
+      ),
       distance = c(150, 450, 800, 300),
       stringsAsFactors = FALSE
     ),
     citations = data.frame(
-      citation_text_clean = c("Smith et al. (2020)", "Jones et al. (2019)",
-                              "Brown et al. (2021)", "Davis et al. (2022)",
-                              "Smith et al. (2020)"),
-      section = c("Introduction", "Methods", "Results", "Discussion", "Results"),
+      citation_text_clean = c(
+        "Smith et al. (2020)",
+        "Jones et al. (2019)",
+        "Brown et al. (2021)",
+        "Davis et al. (2022)",
+        "Smith et al. (2020)"
+      ),
+      section = c(
+        "Introduction",
+        "Methods",
+        "Results",
+        "Discussion",
+        "Results"
+      ),
       stringsAsFactors = FALSE
     ),
     section_colors = c(
@@ -70,7 +91,7 @@ test_that("max_distance parameter filters citation pairs", {
   network_200 <- create_citation_network(mock_data, max_distance = 200)
   stats_200 <- attr(network_200, "stats")
 
-  expect_true(stats_500$n_edges < 4)  # Less than total possible edges
+  expect_true(stats_500$n_edges < 4) # Less than total possible edges
   expect_true(stats_200$n_edges <= stats_500$n_edges)
   expect_true(all(stats_200$avg_distance <= 200))
 })
@@ -109,20 +130,26 @@ test_that("function handles NULL or empty network_data gracefully", {
     section_colors = c()
   )
 
-  expect_warning(result <- create_citation_network(mock_data_null),
-                 "No citation co-occurrence data found")
+  expect_warning(
+    result <- create_citation_network(mock_data_null),
+    "No citation co-occurrence data found"
+  )
   expect_null(result)
 
   mock_data_empty <- list(
-    network_data = data.frame(citation1 = character(0),
-                              citation2 = character(0),
-                              distance = numeric(0)),
+    network_data = data.frame(
+      citation1 = character(0),
+      citation2 = character(0),
+      distance = numeric(0)
+    ),
     citations = data.frame(),
     section_colors = c()
   )
 
-  expect_warning(result <- create_citation_network(mock_data_empty),
-                 "No citation co-occurrence data found")
+  expect_warning(
+    result <- create_citation_network(mock_data_empty),
+    "No citation co-occurrence data found"
+  )
   expect_null(result)
 })
 
@@ -130,8 +157,10 @@ test_that("function handles NULL or empty network_data gracefully", {
 test_that("function warns when no pairs within max_distance", {
   mock_data <- create_mock_citation_results()
 
-  expect_warning(result <- create_citation_network(mock_data, max_distance = 50),
-                 "No citation pairs found within the specified maximum distance")
+  expect_warning(
+    result <- create_citation_network(mock_data, max_distance = 50),
+    "No citation pairs found within the specified maximum distance"
+  )
   expect_null(result)
 })
 
@@ -140,8 +169,10 @@ test_that("function warns when no valid connections after filtering", {
   mock_data <- create_mock_citation_results()
 
   # Set very high min_connections that no node can satisfy
-  expect_warning(result <- create_citation_network(mock_data, min_connections = 100),
-                 "No valid connections after filtering")
+  expect_warning(
+    result <- create_citation_network(mock_data, min_connections = 100),
+    "No valid connections after filtering"
+  )
   expect_null(result)
 })
 

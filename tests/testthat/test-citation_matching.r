@@ -2,13 +2,17 @@
 
 library(testthat)
 library(tibble)
-library(dplyr)
+# library(dplyr)
 
 # Helper functions to create test data
 create_citations_df <- function(texts, types = NULL, ids = NULL) {
   n <- length(texts)
-  if (is.null(types)) types <- rep("narrative_parenthetical", n)
-  if (is.null(ids)) ids <- paste0("CITE_", seq_len(n))
+  if (is.null(types)) {
+    types <- rep("narrative_parenthetical", n)
+  }
+  if (is.null(ids)) {
+    ids <- paste0("CITE_", seq_len(n))
+  }
 
   tibble(
     citation_id = ids,
@@ -18,13 +22,19 @@ create_citations_df <- function(texts, types = NULL, ids = NULL) {
   )
 }
 
-create_references_df <- function(authors, years, ids = NULL,
-                                 first_authors = NULL,
-                                 second_authors = NULL,
-                                 n_authors = NULL,
-                                 ref_source = NULL) {
+create_references_df <- function(
+  authors,
+  years,
+  ids = NULL,
+  first_authors = NULL,
+  second_authors = NULL,
+  n_authors = NULL,
+  ref_source = NULL
+) {
   n <- length(authors)
-  if (is.null(ids)) ids <- paste0("REF_", seq_len(n))
+  if (is.null(ids)) {
+    ids <- paste0("REF_", seq_len(n))
+  }
   if (is.null(first_authors)) {
     # Extract first author from full authors string
     first_authors <- sapply(strsplit(authors, ","), function(x) {
@@ -69,7 +79,9 @@ test_that("returns empty tibble when citations_df is empty", {
 
   expect_s3_class(result, "tbl_df")
   expect_equal(nrow(result), 0)
-  expect_true(all(c("citation_id", "matched_ref_id", "match_confidence") %in% names(result)))
+  expect_true(all(
+    c("citation_id", "matched_ref_id", "match_confidence") %in% names(result)
+  ))
 })
 
 test_that("returns empty tibble when references_df is empty", {
@@ -128,7 +140,7 @@ test_that("matches multiple numbered citations", {
 
   result <- match_citations_to_references(citations, references)
 
-  expect_equal(nrow(result), 3)  # One row per number
+  expect_equal(nrow(result), 3) # One row per number
   expect_equal(result$matched_ref_id, c("REF_1", "REF_2", "REF_3"))
   expect_true(all(result$match_confidence == "high_numbered"))
 })
@@ -240,7 +252,7 @@ test_that("returns no_match_year when year not found", {
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
-    years = c("2019"),  # Different year
+    years = c("2019"), # Different year
     first_authors = c("Smith")
   )
 
@@ -338,7 +350,7 @@ test_that("disambiguates using second author", {
   result <- match_citations_to_references(citations, references)
 
   expect_equal(nrow(result), 1)
-  expect_equal(result$matched_ref_id[1], "REF_1")  # Matches first one with Jones
+  expect_equal(result$matched_ref_id[1], "REF_1") # Matches first one with Jones
   expect_equal(result$match_confidence[1], "high_second_author")
 })
 
@@ -374,14 +386,14 @@ test_that("et al. heuristic prefers references with 3+ authors", {
   result <- match_citations_to_references(citations, references)
 
   expect_equal(nrow(result), 1)
-  expect_equal(result$matched_ref_id[1], "REF_2")  # Should match the 3-author one
+  expect_equal(result$matched_ref_id[1], "REF_2") # Should match the 3-author one
   expect_equal(result$match_confidence[1], "medium_etal_heuristic")
 })
 
 test_that("et al. with inconsistent author count gets medium confidence", {
   citations <- create_citations_df(c("(Smith et al., 2020)"))
   references <- create_references_df(
-    authors = c("Smith J, Jones A"),  # Only 2 authors
+    authors = c("Smith J, Jones A"), # Only 2 authors
     years = c("2020"),
     first_authors = c("Smith"),
     n_authors = c(2)
@@ -409,7 +421,7 @@ test_that("handles multiple matches with fallback", {
   result <- match_citations_to_references(citations, references)
 
   expect_equal(nrow(result), 1)
-  expect_equal(result$matched_ref_id[1], "REF_1")  # Takes first match
+  expect_equal(result$matched_ref_id[1], "REF_1") # Takes first match
   expect_equal(result$match_confidence[1], "medium_multiple_matches")
 })
 
@@ -453,8 +465,11 @@ test_that("CrossRef references with et al. get appropriate confidence", {
 
   expect_equal(nrow(result), 1)
   # With CrossRef and NA n_authors, it should still match but with medium confidence
-  expect_true(!is.na(result$matched_ref_id[1]) ||
-                result$match_confidence[1] %in% c("medium_crossref_etal", "medium_etal_heuristic", "no_match_author"))
+  expect_true(
+    !is.na(result$matched_ref_id[1]) ||
+      result$match_confidence[1] %in%
+        c("medium_crossref_etal", "medium_etal_heuristic", "no_match_author")
+  )
 })
 
 # ============================================================================
@@ -562,9 +577,19 @@ test_that("output contains all required columns", {
   result <- match_citations_to_references(citations, references)
 
   required_cols <- c(
-    "citation_id", "citation_text", "citation_text_clean", "citation_type",
-    "cite_author", "cite_second_author", "cite_year", "cite_has_etal",
-    "matched_ref_id", "ref_full_text", "ref_authors", "ref_year", "match_confidence"
+    "citation_id",
+    "citation_text",
+    "citation_text_clean",
+    "citation_type",
+    "cite_author",
+    "cite_second_author",
+    "cite_year",
+    "cite_has_etal",
+    "matched_ref_id",
+    "ref_full_text",
+    "ref_authors",
+    "ref_year",
+    "match_confidence"
   )
 
   expect_true(all(required_cols %in% names(result)))
@@ -658,7 +683,10 @@ test_that("comprehensive integration test", {
     first_authors = c("Smith")
   )
 
-  result_simple <- match_citations_to_references(citations_simple, references_simple)
+  result_simple <- match_citations_to_references(
+    citations_simple,
+    references_simple
+  )
   expect_equal(result_simple$matched_ref_id[1], "REF_2")
   expect_equal(result_simple$match_confidence[1], "high")
 
@@ -679,7 +707,9 @@ test_that("comprehensive integration test", {
 
   result_two <- match_citations_to_references(citations_two, references_two)
   expect_equal(result_two$matched_ref_id[1], "REF_3")
-  expect_true(result_two$match_confidence[1] %in% c("high", "high_second_author"))
+  expect_true(
+    result_two$match_confidence[1] %in% c("high", "high_second_author")
+  )
 
   # Test 4: Et al.
   citations_etal <- create_citations_df(
@@ -711,7 +741,10 @@ test_that("comprehensive integration test", {
     first_authors = c("Smith")
   )
 
-  result_nomatch_year <- match_citations_to_references(citations_nomatch_year, references_nomatch)
+  result_nomatch_year <- match_citations_to_references(
+    citations_nomatch_year,
+    references_nomatch
+  )
   expect_true(is.na(result_nomatch_year$matched_ref_id[1]))
   expect_equal(result_nomatch_year$match_confidence[1], "no_match_year")
 
@@ -728,7 +761,10 @@ test_that("comprehensive integration test", {
     ids = c("REF_1")
   )
 
-  result_nomatch_num <- match_citations_to_references(citations_nomatch_num, references_nomatch_num)
+  result_nomatch_num <- match_citations_to_references(
+    citations_nomatch_num,
+    references_nomatch_num
+  )
   expect_true(is.na(result_nomatch_num$matched_ref_id[1]))
   expect_equal(result_nomatch_num$match_confidence[1], "no_match_numbered")
 })

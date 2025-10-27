@@ -3,7 +3,7 @@
 
 library(testthat)
 library(tibble)
-library(dplyr)
+# library(dplyr)
 
 # ============================================================================
 # map_citations_to_segments() - HELPER FUNCTION
@@ -211,7 +211,7 @@ test_that("analyze_scientific_content extracts numbered citations", {
 
   if (nrow(result$citations) > 0) {
     numbered_citations <- result$citations %>%
-      filter(grepl("numbered", citation_type))
+      dplyr::filter(grepl("numbered", citation_type))
 
     expect_gte(nrow(numbered_citations), 0)
   }
@@ -245,7 +245,7 @@ test_that("analyze_scientific_content parses multiple citations", {
 
   if (nrow(result$citations) > 0) {
     parsed <- result$citations %>%
-      filter(citation_type == "parsed_from_multiple")
+      dplyr::filter(citation_type == "parsed_from_multiple")
 
     expect_gte(nrow(parsed), 0)
   }

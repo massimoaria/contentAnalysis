@@ -2,7 +2,7 @@
 
 library(testthat)
 library(tibble)
-library(dplyr)
+#library(dplyr)
 
 # ============================================================================
 # calculate_word_distribution() - INPUT VALIDATION
@@ -50,7 +50,9 @@ test_that("calculate_word_distribution works with string input", {
   )
 
   expect_s3_class(result, "tbl_df")
-  expect_true(all(c("segment_id", "segment_name", "word", "count") %in% names(result)))
+  expect_true(all(
+    c("segment_id", "segment_name", "word", "count") %in% names(result)
+  ))
 })
 
 test_that("calculate_word_distribution counts word frequencies", {
@@ -67,8 +69,8 @@ test_that("calculate_word_distribution counts word frequencies", {
   )
 
   # test appears 3 times, word appears 2 times
-  test_count <- result %>% filter(word == "test") %>% pull(count)
-  word_count <- result %>% filter(word == "word") %>% pull(count)
+  test_count <- result %>% dplyr::filter(word == "test") %>% dplyr::pull(count)
+  word_count <- result %>% dplyr::filter(word == "word") %>% dplyr::pull(count)
 
   expect_equal(test_count, 3)
   expect_equal(word_count, 2)
@@ -89,7 +91,9 @@ test_that("calculate_word_distribution calculates relative frequency", {
 
   expect_true("relative_frequency" %in% names(result))
   expect_true("percentage" %in% names(result))
-  expect_true(all(result$relative_frequency >= 0 & result$relative_frequency <= 1))
+  expect_true(all(
+    result$relative_frequency >= 0 & result$relative_frequency <= 1
+  ))
 })
 
 test_that("calculate_word_distribution creates equal-length segments", {
@@ -132,7 +136,9 @@ test_that("calculate_word_distribution detects sections automatically", {
   )
 
   expect_equal(unique(result$segment_type), "section")
-  expect_true(all(c("Introduction", "Methods", "Results") %in% result$segment_name))
+  expect_true(all(
+    c("Introduction", "Methods", "Results") %in% result$segment_name
+  ))
 })
 
 test_that("calculate_word_distribution excludes Full_text and References", {
@@ -239,7 +245,7 @@ test_that("calculate_word_distribution removes stopwords when requested", {
   # "the" should NOT appear without stopwords (or have 0 count)
   # Actually, selected_words are searched after stopword removal, so "the" won't be found
   the_count_no_stops <- result_no_stops %>%
-    filter(word == "the") %>%
+    dplyr::filter(word == "the") %>%
     nrow()
 
   expect_equal(the_count_no_stops, 0)
@@ -263,7 +269,9 @@ test_that("calculate_word_distribution handles bigrams", {
   )
 
   expect_true("machine learning" %in% result$word)
-  ml_count <- result %>% filter(word == "machine learning") %>% pull(count)
+  ml_count <- result %>%
+    dplyr::filter(word == "machine learning") %>%
+    dplyr::pull(count)
   expect_equal(ml_count, 2)
 })
 
@@ -296,7 +304,9 @@ test_that("calculate_word_distribution handles mixed unigrams and bigrams", {
     remove_stopwords = FALSE
   )
 
-  expect_true(all(c("machine", "machine learning", "data science") %in% result$word))
+  expect_true(all(
+    c("machine", "machine learning", "data science") %in% result$word
+  ))
 })
 
 # ============================================================================
@@ -315,8 +325,16 @@ test_that("calculate_word_distribution returns correct column structure", {
     n_segments = 1
   )
 
-  expected_cols <- c("segment_id", "segment_name", "segment_type", "word",
-                     "count", "total_words", "relative_frequency", "percentage")
+  expected_cols <- c(
+    "segment_id",
+    "segment_name",
+    "segment_type",
+    "word",
+    "count",
+    "total_words",
+    "relative_frequency",
+    "percentage"
+  )
 
   expect_true(all(expected_cols %in% names(result)))
 })
@@ -374,7 +392,9 @@ test_that("calculate_word_distribution is case insensitive", {
   )
 
   # Should find both "Machine" and "MACHINE" as "machine"
-  machine_count <- result %>% filter(word == "machine") %>% pull(count)
+  machine_count <- result %>%
+    dplyr::filter(word == "machine") %>%
+    dplyr::pull(count)
   expect_gte(machine_count, 2)
 })
 
@@ -404,7 +424,10 @@ test_that("calculate_word_distribution complete workflow with sections", {
   expect_equal(unique(result$segment_type), "section")
 
   # Verify sections
-  expect_true(all(c("Introduction", "Methods", "Results", "Discussion") %in% result$segment_name))
+  expect_true(all(
+    c("Introduction", "Methods", "Results", "Discussion") %in%
+      result$segment_name
+  ))
 
   # Verify words tracked
   expect_true("machine learning" %in% result$word)
