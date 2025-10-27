@@ -8,6 +8,7 @@ library(tibble)
 # ============================================================================
 
 test_that("get_crossref_references stops when DOI is missing", {
+  skip_on_cran()
   expect_error(
     get_crossref_references(),
     "DOI is required"
@@ -15,6 +16,7 @@ test_that("get_crossref_references stops when DOI is missing", {
 })
 
 test_that("get_crossref_references stops when DOI is NULL", {
+  skip_on_cran()
   expect_error(
     get_crossref_references(doi = NULL),
     "DOI is required"
@@ -22,6 +24,7 @@ test_that("get_crossref_references stops when DOI is NULL", {
 })
 
 test_that("get_crossref_references stops when DOI is empty string", {
+  skip_on_cran()
   expect_error(
     get_crossref_references(doi = ""),
     "DOI is required"
@@ -33,6 +36,7 @@ test_that("get_crossref_references stops when DOI is empty string", {
 # ============================================================================
 
 test_that("get_crossref_references constructs correct API URL", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   # Mock the httr2 functions
@@ -75,6 +79,7 @@ test_that("get_crossref_references constructs correct API URL", {
 })
 
 test_that("get_crossref_references adds mailto to user agent", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   mailto_called <- FALSE
@@ -109,6 +114,7 @@ test_that("get_crossref_references adds mailto to user agent", {
 })
 
 test_that("get_crossref_references works without mailto", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -133,6 +139,7 @@ test_that("get_crossref_references works without mailto", {
 })
 
 test_that("get_crossref_references extracts single reference", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -175,6 +182,7 @@ test_that("get_crossref_references extracts single reference", {
 })
 
 test_that("get_crossref_references extracts multiple references", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -225,6 +233,7 @@ test_that("get_crossref_references extracts multiple references", {
 # ============================================================================
 
 test_that("get_crossref_references handles NULL fields as NA", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -237,11 +246,11 @@ test_that("get_crossref_references handles NULL fields as NA", {
           reference = list(
             list(
               key = "ref1",
-              DOI = NULL,  # Missing DOI
+              DOI = NULL, # Missing DOI
               `article-title` = "Article",
-              author = NULL,  # Missing author
+              author = NULL, # Missing author
               year = "2020",
-              `journal-title` = NULL,  # Missing journal
+              `journal-title` = NULL, # Missing journal
               volume = NULL,
               `first-page` = NULL
             )
@@ -264,6 +273,7 @@ test_that("get_crossref_references handles NULL fields as NA", {
 })
 
 test_that("get_crossref_references handles references with partial data", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -320,6 +330,7 @@ test_that("get_crossref_references handles references with partial data", {
 # ============================================================================
 
 test_that("get_crossref_references returns NULL when no references found", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -329,7 +340,7 @@ test_that("get_crossref_references returns NULL when no references found", {
     resp_body_json = function(resp) {
       list(
         message = list(
-          reference = NULL  # No references
+          reference = NULL # No references
         )
       )
     },
@@ -344,6 +355,7 @@ test_that("get_crossref_references returns NULL when no references found", {
 })
 
 test_that("get_crossref_references returns NULL when reference list is empty", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -353,7 +365,7 @@ test_that("get_crossref_references returns NULL when reference list is empty", {
     resp_body_json = function(resp) {
       list(
         message = list(
-          reference = list()  # Empty list
+          reference = list() # Empty list
         )
       )
     },
@@ -372,6 +384,7 @@ test_that("get_crossref_references returns NULL when reference list is empty", {
 # ============================================================================
 
 test_that("get_crossref_references handles API errors", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -393,6 +406,7 @@ test_that("get_crossref_references handles API errors", {
 })
 
 test_that("get_crossref_references handles network errors", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -414,6 +428,7 @@ test_that("get_crossref_references handles network errors", {
 })
 
 test_that("get_crossref_references handles malformed JSON response", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -440,6 +455,7 @@ test_that("get_crossref_references handles malformed JSON response", {
 # ============================================================================
 
 test_that("get_crossref_references returns data.frame with correct columns", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -469,13 +485,22 @@ test_that("get_crossref_references returns data.frame with correct columns", {
 
   result <- get_crossref_references("10.1234/test")
 
-  expected_cols <- c("key", "doi", "article_title", "author", "year",
-                     "journal", "volume", "first_page")
+  expected_cols <- c(
+    "key",
+    "doi",
+    "article_title",
+    "author",
+    "year",
+    "journal",
+    "volume",
+    "first_page"
+  )
 
   expect_true(all(expected_cols %in% names(result)))
 })
 
 test_that("get_crossref_references has correct column types", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -512,6 +537,7 @@ test_that("get_crossref_references has correct column types", {
 # ============================================================================
 
 test_that("get_crossref_references handles typical academic references", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -558,6 +584,7 @@ test_that("get_crossref_references handles typical academic references", {
 })
 
 test_that("get_crossref_references handles book chapters", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -596,6 +623,7 @@ test_that("get_crossref_references handles book chapters", {
 # ============================================================================
 
 test_that("get_crossref_references complete workflow", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   url_captured <- NULL
@@ -651,7 +679,10 @@ test_that("get_crossref_references complete workflow", {
   )
 
   # Verify URL construction
-  expect_equal(url_captured, "https://api.crossref.org/works/10.1016/j.example.2023.01.001")
+  expect_equal(
+    url_captured,
+    "https://api.crossref.org/works/10.1016/j.example.2023.01.001"
+  )
 
   # Verify mailto was used
   expect_equal(agent_captured, "mailto:researcher@university.edu")
@@ -678,6 +709,7 @@ test_that("get_crossref_references complete workflow", {
 # ============================================================================
 
 test_that("get_crossref_references handles DOI with special characters", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   local_mocked_bindings(
@@ -708,6 +740,7 @@ test_that("get_crossref_references handles DOI with special characters", {
 })
 
 test_that("get_crossref_references handles very long reference list", {
+  skip_on_cran()
   skip_if_not_installed("httr2")
 
   # Create 100 references

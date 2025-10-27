@@ -1,4 +1,4 @@
-# Test suite for match_citations_to_references function
+## Test suite for match_citations_to_references function
 
 library(testthat)
 library(tibble)
@@ -72,6 +72,7 @@ create_references_df <- function(
 # ============================================================================
 
 test_that("returns empty tibble when citations_df is empty", {
+  skip_on_cran()
   citations <- create_citations_df(character(0))
   references <- create_references_df(c("Smith J"), c("2020"))
 
@@ -85,6 +86,7 @@ test_that("returns empty tibble when citations_df is empty", {
 })
 
 test_that("returns empty tibble when references_df is empty", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(character(0), character(0))
 
@@ -95,6 +97,7 @@ test_that("returns empty tibble when references_df is empty", {
 })
 
 test_that("handles both empty dataframes", {
+  skip_on_cran()
   citations <- create_citations_df(character(0))
   references <- create_references_df(character(0), character(0))
 
@@ -109,6 +112,7 @@ test_that("handles both empty dataframes", {
 # ============================================================================
 
 test_that("matches single numbered citation", {
+  skip_on_cran()
   citations <- create_citations_df(
     texts = c("[1]"),
     types = c("numbered_single")
@@ -128,6 +132,7 @@ test_that("matches single numbered citation", {
 })
 
 test_that("matches multiple numbered citations", {
+  skip_on_cran()
   citations <- create_citations_df(
     texts = c("[1, 2, 3]"),
     types = c("numbered_multiple")
@@ -146,6 +151,7 @@ test_that("matches multiple numbered citations", {
 })
 
 test_that("handles numbered citation with no matching reference", {
+  skip_on_cran()
   citations <- create_citations_df(
     texts = c("[99]"),
     types = c("numbered_single")
@@ -164,6 +170,7 @@ test_that("handles numbered citation with no matching reference", {
 })
 
 test_that("handles numbered citation with no numbers", {
+  skip_on_cran()
   citations <- create_citations_df(
     texts = c("[]"),
     types = c("numbered_single")
@@ -185,6 +192,7 @@ test_that("handles numbered citation with no numbers", {
 # ============================================================================
 
 test_that("matches simple narrative citation with exact author and year", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -202,6 +210,7 @@ test_that("matches simple narrative citation with exact author and year", {
 })
 
 test_that("matches citation with different case", {
+  skip_on_cran()
   citations <- create_citations_df(c("(SMITH, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -217,6 +226,7 @@ test_that("matches citation with different case", {
 })
 
 test_that("handles citation with missing year", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -231,6 +241,7 @@ test_that("handles citation with missing year", {
 })
 
 test_that("handles citation with missing author", {
+  skip_on_cran()
   citations <- create_citations_df(c("(2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -249,6 +260,7 @@ test_that("handles citation with missing author", {
 # ============================================================================
 
 test_that("returns no_match_year when year not found", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -264,6 +276,7 @@ test_that("returns no_match_year when year not found", {
 })
 
 test_that("returns no_match_author when author not found", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Johnson, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -283,6 +296,7 @@ test_that("returns no_match_author when author not found", {
 # ============================================================================
 
 test_that("performs fuzzy matching on author names", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smi, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -303,6 +317,7 @@ test_that("performs fuzzy matching on author names", {
 # ============================================================================
 
 test_that("matches citation with two authors using 'and'", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith and Jones, 2020)"))
   references <- create_references_df(
     authors = c("Smith J, Jones A"),
@@ -321,6 +336,7 @@ test_that("matches citation with two authors using 'and'", {
 })
 
 test_that("matches citation with two authors using '&'", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith & Jones, 2020)"))
   references <- create_references_df(
     authors = c("Smith J, Jones A"),
@@ -338,6 +354,7 @@ test_that("matches citation with two authors using '&'", {
 })
 
 test_that("disambiguates using second author", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith and Jones, 2020)"))
   references <- create_references_df(
     authors = c("Smith J, Jones A", "Smith J, Brown K"),
@@ -359,6 +376,7 @@ test_that("disambiguates using second author", {
 # ============================================================================
 
 test_that("matches citation with et al.", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith et al., 2020)"))
   references <- create_references_df(
     authors = c("Smith J, Jones A, Brown K"),
@@ -375,6 +393,7 @@ test_that("matches citation with et al.", {
 })
 
 test_that("et al. heuristic prefers references with 3+ authors", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith et al., 2020)"))
   references <- create_references_df(
     authors = c("Smith J", "Smith J, Jones A, Brown K"),
@@ -391,6 +410,7 @@ test_that("et al. heuristic prefers references with 3+ authors", {
 })
 
 test_that("et al. with inconsistent author count gets medium confidence", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith et al., 2020)"))
   references <- create_references_df(
     authors = c("Smith J, Jones A"), # Only 2 authors
@@ -411,6 +431,7 @@ test_that("et al. with inconsistent author count gets medium confidence", {
 # ============================================================================
 
 test_that("handles multiple matches with fallback", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c("Smith J", "Smith K", "Smith M"),
@@ -430,6 +451,7 @@ test_that("handles multiple matches with fallback", {
 # ============================================================================
 
 test_that("handles CrossRef references with surname extraction", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
 
   # CrossRef format: "U Bititci" (initial + surname)
@@ -450,6 +472,7 @@ test_that("handles CrossRef references with surname extraction", {
 })
 
 test_that("CrossRef references with et al. get appropriate confidence", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith et al., 2020)"))
 
   # CrossRef format: first author only, n_authors is NA
@@ -477,6 +500,7 @@ test_that("CrossRef references with et al. get appropriate confidence", {
 # ============================================================================
 
 test_that("handles authors with hyphens", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith-Jones, 2020)"))
   references <- create_references_df(
     authors = c("Smith-Jones A"),
@@ -491,6 +515,7 @@ test_that("handles authors with hyphens", {
 })
 
 test_that("handles authors with apostrophes", {
+  skip_on_cran()
   citations <- create_citations_df(c("(O'Brien, 2020)"))
   references <- create_references_df(
     authors = c("O'Brien M"),
@@ -505,6 +530,7 @@ test_that("handles authors with apostrophes", {
 })
 
 test_that("handles unicode characters in names", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Müller, 2020)"))
   references <- create_references_df(
     authors = c("Müller K"),
@@ -523,6 +549,7 @@ test_that("handles unicode characters in names", {
 # ============================================================================
 
 test_that("handles year with letter suffix", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020a)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -542,6 +569,7 @@ test_that("handles year with letter suffix", {
 # ============================================================================
 
 test_that("handles mix of numbered and narrative citations", {
+  skip_on_cran()
   citations <- create_citations_df(
     texts = c("[1]", "(Smith, 2020)"),
     types = c("numbered_single", "narrative_parenthetical")
@@ -567,6 +595,7 @@ test_that("handles mix of numbered and narrative citations", {
 # ============================================================================
 
 test_that("output contains all required columns", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -596,6 +625,7 @@ test_that("output contains all required columns", {
 })
 
 test_that("output has correct types", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -616,6 +646,7 @@ test_that("output has correct types", {
 # ============================================================================
 
 test_that("handles references with NA years", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c("Smith J"),
@@ -631,6 +662,7 @@ test_that("handles references with NA years", {
 })
 
 test_that("handles references with NA authors", {
+  skip_on_cran()
   citations <- create_citations_df(c("(Smith, 2020)"))
   references <- create_references_df(
     authors = c(NA_character_),
@@ -651,6 +683,7 @@ test_that("handles references with NA authors", {
 # ============================================================================
 
 test_that("comprehensive integration test", {
+  skip_on_cran()
   # Test each citation type separately for clarity
 
   # Test 1: Numbered citation

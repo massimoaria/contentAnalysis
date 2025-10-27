@@ -9,6 +9,7 @@ library(tibble)
 # ============================================================================
 
 test_that("calculate_word_distribution requires text input", {
+  skip_on_cran()
   expect_error(
     calculate_word_distribution(selected_words = c("test")),
     "argument \"text\" is missing"
@@ -16,6 +17,7 @@ test_that("calculate_word_distribution requires text input", {
 })
 
 test_that("calculate_word_distribution requires selected_words", {
+  skip_on_cran()
   expect_error(
     calculate_word_distribution(text = "Sample text"),
     "argument \"selected_words\" is missing"
@@ -23,6 +25,7 @@ test_that("calculate_word_distribution requires selected_words", {
 })
 
 test_that("calculate_word_distribution validates use_sections parameter", {
+  skip_on_cran()
   expect_error(
     calculate_word_distribution(
       text = "Sample text",
@@ -38,6 +41,7 @@ test_that("calculate_word_distribution validates use_sections parameter", {
 # ============================================================================
 
 test_that("calculate_word_distribution works with string input", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "machine learning is important. machine learning helps research."
@@ -56,6 +60,7 @@ test_that("calculate_word_distribution works with string input", {
 })
 
 test_that("calculate_word_distribution counts word frequencies", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "test word test word test another"
@@ -77,6 +82,7 @@ test_that("calculate_word_distribution counts word frequencies", {
 })
 
 test_that("calculate_word_distribution calculates relative frequency", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "test test test other"
@@ -97,6 +103,7 @@ test_that("calculate_word_distribution calculates relative frequency", {
 })
 
 test_that("calculate_word_distribution creates equal-length segments", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   # Long text to divide into segments
@@ -121,6 +128,7 @@ test_that("calculate_word_distribution creates equal-length segments", {
 # ============================================================================
 
 test_that("calculate_word_distribution detects sections automatically", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -142,6 +150,7 @@ test_that("calculate_word_distribution detects sections automatically", {
 })
 
 test_that("calculate_word_distribution excludes Full_text and References", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -163,6 +172,7 @@ test_that("calculate_word_distribution excludes Full_text and References", {
 })
 
 test_that("calculate_word_distribution uses Full_text when no sections", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -181,6 +191,7 @@ test_that("calculate_word_distribution uses Full_text when no sections", {
 })
 
 test_that("calculate_word_distribution forces sections when use_sections=TRUE", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -198,6 +209,7 @@ test_that("calculate_word_distribution forces sections when use_sections=TRUE", 
 })
 
 test_that("calculate_word_distribution warns when sections requested but unavailable", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -219,6 +231,7 @@ test_that("calculate_word_distribution warns when sections requested but unavail
 # ============================================================================
 
 test_that("calculate_word_distribution removes stopwords when requested", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "the machine learning is the important and the useful"
@@ -256,6 +269,7 @@ test_that("calculate_word_distribution removes stopwords when requested", {
 # ============================================================================
 
 test_that("calculate_word_distribution handles bigrams", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "machine learning is important machine learning helps research"
@@ -276,6 +290,7 @@ test_that("calculate_word_distribution handles bigrams", {
 })
 
 test_that("calculate_word_distribution handles trigrams", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "neural network model is good neural network model works"
@@ -292,6 +307,7 @@ test_that("calculate_word_distribution handles trigrams", {
 })
 
 test_that("calculate_word_distribution handles mixed unigrams and bigrams", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "machine learning is important for data science research"
@@ -314,6 +330,7 @@ test_that("calculate_word_distribution handles mixed unigrams and bigrams", {
 # ============================================================================
 
 test_that("calculate_word_distribution returns correct column structure", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "test text here"
@@ -340,6 +357,7 @@ test_that("calculate_word_distribution returns correct column structure", {
 })
 
 test_that("calculate_word_distribution sets attributes", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "test text"
@@ -358,6 +376,7 @@ test_that("calculate_word_distribution sets attributes", {
 })
 
 test_that("calculate_word_distribution handles empty results gracefully", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "this text has no matching words"
@@ -379,6 +398,7 @@ test_that("calculate_word_distribution handles empty results gracefully", {
 # ============================================================================
 
 test_that("calculate_word_distribution is case insensitive", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Machine Learning MACHINE learning"
@@ -403,6 +423,7 @@ test_that("calculate_word_distribution is case insensitive", {
 # ============================================================================
 
 test_that("calculate_word_distribution complete workflow with sections", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -443,6 +464,7 @@ test_that("calculate_word_distribution complete workflow with sections", {
 # ============================================================================
 
 test_that("plot_word_distribution requires plotly", {
+  skip_on_cran()
   # Skip this test if plotly is installed (can't test the error)
   skip_if_not_installed("plotly")
 
@@ -452,6 +474,7 @@ test_that("plot_word_distribution requires plotly", {
 })
 
 test_that("plot_word_distribution creates plotly object", {
+  skip_on_cran()
   skip_if_not_installed("plotly")
   skip_if_not_installed("RColorBrewer")
   skip_if_not_installed("scales")
@@ -472,6 +495,7 @@ test_that("plot_word_distribution creates plotly object", {
 })
 
 test_that("plot_word_distribution accepts plot_type parameter", {
+  skip_on_cran()
   skip_if_not_installed("plotly")
   skip_if_not_installed("RColorBrewer")
   skip_if_not_installed("scales")
@@ -493,6 +517,7 @@ test_that("plot_word_distribution accepts plot_type parameter", {
 })
 
 test_that("plot_word_distribution accepts custom colors", {
+  skip_on_cran()
   skip_if_not_installed("plotly")
   skip_if_not_installed("RColorBrewer")
   skip_if_not_installed("scales")
@@ -517,6 +542,7 @@ test_that("plot_word_distribution accepts custom colors", {
 })
 
 test_that("plot_word_distribution handles show_points parameter", {
+  skip_on_cran()
   skip_if_not_installed("plotly")
   skip_if_not_installed("RColorBrewer")
   skip_if_not_installed("scales")
@@ -538,6 +564,7 @@ test_that("plot_word_distribution handles show_points parameter", {
 })
 
 test_that("plot_word_distribution handles smooth parameter", {
+  skip_on_cran()
   skip_if_not_installed("plotly")
   skip_if_not_installed("RColorBrewer")
   skip_if_not_installed("scales")
@@ -563,6 +590,7 @@ test_that("plot_word_distribution handles smooth parameter", {
 # ============================================================================
 
 test_that("plot_word_distribution complete workflow", {
+  skip_on_cran()
   skip_if_not_installed("plotly")
   skip_if_not_installed("RColorBrewer")
   skip_if_not_installed("scales")
@@ -600,6 +628,7 @@ test_that("plot_word_distribution complete workflow", {
 # ============================================================================
 
 test_that("calculate_word_distribution handles single segment", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "short text"
@@ -615,6 +644,7 @@ test_that("calculate_word_distribution handles single segment", {
 })
 
 test_that("calculate_word_distribution handles many segments", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- paste(rep("word test sample", 200), collapse = " ")
@@ -630,6 +660,7 @@ test_that("calculate_word_distribution handles many segments", {
 })
 
 test_that("calculate_word_distribution handles very short text", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "test"

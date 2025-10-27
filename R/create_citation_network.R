@@ -74,8 +74,10 @@
 #' @import dplyr
 #' @import visNetwork
 #' @import stringr
+#' @importFrom igraph layout_nicely
 #' @importFrom grDevices col2rgb
 #' @importFrom stats na.omit
+#'
 #'
 #' @export
 create_citation_network <- function(

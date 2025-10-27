@@ -4,14 +4,21 @@
 library(testthat)
 
 # Helper function to create mock PDF data
-create_mock_pdf_data <- function(n_rows = 100, n_columns = 2, page_width = 600) {
+create_mock_pdf_data <- function(
+  n_rows = 100,
+  n_columns = 2,
+  page_width = 600
+) {
   if (n_columns == 1) {
     data.frame(
       x = runif(n_rows, 50, page_width - 50),
       y = sort(runif(n_rows, 50, 700)),
       width = runif(n_rows, 20, 100),
       height = rep(12, n_rows),
-      text = replicate(n_rows, paste(sample(letters, 5, replace = TRUE), collapse = "")),
+      text = replicate(
+        n_rows,
+        paste(sample(letters, 5, replace = TRUE), collapse = "")
+      ),
       stringsAsFactors = FALSE
     )
   } else {
@@ -25,7 +32,10 @@ create_mock_pdf_data <- function(n_rows = 100, n_columns = 2, page_width = 600) 
         y = sort(runif(rows_per_col, 50, 700)),
         width = runif(rows_per_col, 20, 100),
         height = rep(12, rows_per_col),
-        text = replicate(rows_per_col, paste(sample(letters, 5, replace = TRUE), collapse = "")),
+        text = replicate(
+          rows_per_col,
+          paste(sample(letters, 5, replace = TRUE), collapse = "")
+        ),
         stringsAsFactors = FALSE
       )
     })
@@ -35,6 +45,7 @@ create_mock_pdf_data <- function(n_rows = 100, n_columns = 2, page_width = 600) 
 
 # Test 1: Basic functionality with default parameters
 test_that("pdf2txt_multicolumn_safe works with default parameters", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(create_mock_pdf_data(n_rows = 50, n_columns = 2))
@@ -54,6 +65,7 @@ test_that("pdf2txt_multicolumn_safe works with default parameters", {
 
 # Test 2: Single column extraction
 test_that("pdf2txt_multicolumn_safe handles single column correctly", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(create_mock_pdf_data(n_rows = 50, n_columns = 1))
@@ -72,6 +84,7 @@ test_that("pdf2txt_multicolumn_safe handles single column correctly", {
 
 # Test 3: Two column extraction with explicit parameter
 test_that("pdf2txt_multicolumn_safe handles two columns explicitly", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(create_mock_pdf_data(n_rows = 100, n_columns = 2))
@@ -90,6 +103,7 @@ test_that("pdf2txt_multicolumn_safe handles two columns explicitly", {
 
 # Test 4: Three column extraction
 test_that("pdf2txt_multicolumn_safe handles three columns", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(create_mock_pdf_data(n_rows = 150, n_columns = 3))
@@ -108,6 +122,7 @@ test_that("pdf2txt_multicolumn_safe handles three columns", {
 
 # Test 5: Structure preservation TRUE vs FALSE
 test_that("preserve_structure parameter affects output format", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(create_mock_pdf_data(n_rows = 50, n_columns = 2))
@@ -118,10 +133,14 @@ test_that("preserve_structure parameter affects output format", {
     .package = "pdftools"
   )
 
-  result_structured <- pdf2txt_multicolumn_safe("dummy.pdf",
-                                                preserve_structure = TRUE)
-  result_continuous <- pdf2txt_multicolumn_safe("dummy.pdf",
-                                                preserve_structure = FALSE)
+  result_structured <- pdf2txt_multicolumn_safe(
+    "dummy.pdf",
+    preserve_structure = TRUE
+  )
+  result_continuous <- pdf2txt_multicolumn_safe(
+    "dummy.pdf",
+    preserve_structure = FALSE
+  )
 
   # Structured text should have newlines
   expect_true(grepl("\n", result_structured))
@@ -133,9 +152,14 @@ test_that("preserve_structure parameter affects output format", {
 
 # Test 6: Custom column threshold
 test_that("custom column_threshold is respected", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
-  mock_data <- list(create_mock_pdf_data(n_rows = 100, n_columns = 2, page_width = 600))
+  mock_data <- list(create_mock_pdf_data(
+    n_rows = 100,
+    n_columns = 2,
+    page_width = 600
+  ))
 
   local_mocked_bindings(
     pdf_data = function(file) mock_data,
@@ -151,11 +175,18 @@ test_that("custom column_threshold is respected", {
 
 # Test 7: Empty page handling
 test_that("empty pages are handled gracefully", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(
-    data.frame(x = numeric(0), y = numeric(0), width = numeric(0),
-               height = numeric(0), text = character(0), stringsAsFactors = FALSE)
+    data.frame(
+      x = numeric(0),
+      y = numeric(0),
+      width = numeric(0),
+      height = numeric(0),
+      text = character(0),
+      stringsAsFactors = FALSE
+    )
   )
 
   local_mocked_bindings(
@@ -172,6 +203,7 @@ test_that("empty pages are handled gracefully", {
 
 # Test 8: Multiple pages
 test_that("multiple pages are processed correctly", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(
@@ -194,6 +226,7 @@ test_that("multiple pages are processed correctly", {
 
 # Test 9: Fallback to pdf_text when pdf_data fails
 test_that("fallback to pdf_text works when pdf_data fails", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_text <- c("Page 1 text content", "Page 2 text content")
@@ -217,6 +250,7 @@ test_that("fallback to pdf_text works when pdf_data fails", {
 
 # Test 10: No pdf_data support (old poppler version)
 test_that("returns NA when pdf_data is not supported", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   local_mocked_bindings(
@@ -234,6 +268,7 @@ test_that("returns NA when pdf_data is not supported", {
 
 # Test 11: Hyphenation removal
 test_that("hyphenation at line breaks is removed", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   mock_data <- list(
@@ -261,6 +296,7 @@ test_that("hyphenation at line breaks is removed", {
 
 # Test 12: Input validation - file not found
 test_that("function handles invalid inputs appropriately", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   local_mocked_bindings(
@@ -278,6 +314,7 @@ test_that("function handles invalid inputs appropriately", {
 
 # Test 13: Column detection with sparse data
 test_that("automatic column detection handles sparse data", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   # Only 10 unique x positions (sparse)
@@ -304,6 +341,7 @@ test_that("automatic column detection handles sparse data", {
 
 # Test 14: Very few rows in a column (edge case)
 test_that("handles columns with very few rows", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   # Left column has only 2 rows
@@ -330,6 +368,7 @@ test_that("handles columns with very few rows", {
 
 # Test 15: K-means with well-separated columns
 test_that("k-means clustering works with well-separated columns", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   # Create data with very clear column separation
@@ -338,7 +377,10 @@ test_that("k-means clustering works with well-separated columns", {
     y = sort(runif(50, 50, 700)),
     width = rep(50, 50),
     height = rep(12, 50),
-    text = replicate(50, paste(sample(letters, 5, replace = TRUE), collapse = "")),
+    text = replicate(
+      50,
+      paste(sample(letters, 5, replace = TRUE), collapse = "")
+    ),
     stringsAsFactors = FALSE
   )
 
@@ -347,7 +389,10 @@ test_that("k-means clustering works with well-separated columns", {
     y = sort(runif(50, 50, 700)),
     width = rep(50, 50),
     height = rep(12, 50),
-    text = replicate(50, paste(sample(letters, 5, replace = TRUE), collapse = "")),
+    text = replicate(
+      50,
+      paste(sample(letters, 5, replace = TRUE), collapse = "")
+    ),
     stringsAsFactors = FALSE
   )
 
@@ -367,6 +412,7 @@ test_that("k-means clustering works with well-separated columns", {
 
 # Test 16: Test with titles and headers (structure preservation)
 test_that("structure preservation identifies titles", {
+  skip_on_cran()
   skip_if_not_installed("pdftools")
 
   # Create data with title-like content
@@ -375,8 +421,13 @@ test_that("structure preservation identifies titles", {
     y = c(100, 150, 200, 215, 230),
     width = c(200, 150, 50, 50, 50),
     height = c(18, 14, 12, 12, 12),
-    text = c("INTRODUCTION", "1. Background", "Normal text here.",
-             "More text.", "Continues here."),
+    text = c(
+      "INTRODUCTION",
+      "1. Background",
+      "Normal text here.",
+      "More text.",
+      "Continues here."
+    ),
     stringsAsFactors = FALSE
   )
 
@@ -386,9 +437,11 @@ test_that("structure preservation identifies titles", {
     .package = "pdftools"
   )
 
-  result <- pdf2txt_multicolumn_safe("dummy.pdf",
-                                     n_columns = 1,
-                                     preserve_structure = TRUE)
+  result <- pdf2txt_multicolumn_safe(
+    "dummy.pdf",
+    n_columns = 1,
+    preserve_structure = TRUE
+  )
 
   expect_type(result, "character")
   expect_true(nchar(result) > 0)

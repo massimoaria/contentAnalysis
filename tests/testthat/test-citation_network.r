@@ -52,6 +52,7 @@ create_mock_citation_results <- function() {
 
 # Test 1: Basic functionality with valid input
 test_that("create_citation_network creates valid network with default parameters", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
   network <- create_citation_network(mock_data)
 
@@ -62,6 +63,7 @@ test_that("create_citation_network creates valid network with default parameters
 
 # Test 2: Network statistics are correctly calculated
 test_that("network statistics are correctly computed", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
   network <- create_citation_network(mock_data)
   stats <- attr(network, "stats")
@@ -81,6 +83,7 @@ test_that("network statistics are correctly computed", {
 
 # Test 3: max_distance parameter filters correctly
 test_that("max_distance parameter filters citation pairs", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
 
   # With max_distance = 500, should exclude the pair with distance 800
@@ -98,6 +101,7 @@ test_that("max_distance parameter filters citation pairs", {
 
 # Test 4: min_connections parameter filters nodes
 test_that("min_connections parameter filters nodes correctly", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
 
   network_min1 <- create_citation_network(mock_data, min_connections = 1)
@@ -112,6 +116,7 @@ test_that("min_connections parameter filters nodes correctly", {
 
 # Test 5: show_labels parameter works
 test_that("show_labels parameter controls label display", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
 
   network_with_labels <- create_citation_network(mock_data, show_labels = TRUE)
@@ -124,6 +129,7 @@ test_that("show_labels parameter controls label display", {
 
 # Test 6: Handles NULL or empty network_data
 test_that("function handles NULL or empty network_data gracefully", {
+  skip_on_cran()
   mock_data_null <- list(
     network_data = NULL,
     citations = data.frame(),
@@ -155,6 +161,7 @@ test_that("function handles NULL or empty network_data gracefully", {
 
 # Test 7: Warning when no pairs within max_distance
 test_that("function warns when no pairs within max_distance", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
 
   expect_warning(
@@ -166,6 +173,7 @@ test_that("function warns when no pairs within max_distance", {
 
 # Test 8: Warning when no valid connections after filtering
 test_that("function warns when no valid connections after filtering", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
 
   # Set very high min_connections that no node can satisfy
@@ -178,6 +186,7 @@ test_that("function warns when no valid connections after filtering", {
 
 # Test 9: Multi-section citations are correctly identified
 test_that("multi-section citations are correctly identified", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
   network <- create_citation_network(mock_data)
   stats <- attr(network, "stats")
@@ -193,6 +202,7 @@ test_that("multi-section citations are correctly identified", {
 
 # Test 10: Section colors are properly applied
 test_that("section colors are properly applied", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
   network <- create_citation_network(mock_data)
   stats <- attr(network, "stats")
@@ -204,6 +214,7 @@ test_that("section colors are properly applied", {
 
 # Test 11: Edge properties are correctly set
 test_that("edge properties reflect distance correctly", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
   network <- create_citation_network(mock_data, max_distance = 1000)
 
@@ -216,6 +227,7 @@ test_that("edge properties reflect distance correctly", {
 
 # Test 12: Section distribution is calculated
 test_that("section distribution is calculated in statistics", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
   network <- create_citation_network(mock_data)
   stats <- attr(network, "stats")
@@ -228,6 +240,7 @@ test_that("section distribution is calculated in statistics", {
 
 # Test 13: Unknown sections are handled
 test_that("unknown sections are handled correctly", {
+  skip_on_cran()
   mock_data_with_na <- create_mock_citation_results()
   mock_data_with_na$citations$section[1] <- NA
 
@@ -243,6 +256,7 @@ test_that("unknown sections are handled correctly", {
 
 # Test 14: Network attributes contain expected components
 test_that("returned network has all expected attributes", {
+  skip_on_cran()
   mock_data <- create_mock_citation_results()
   network <- create_citation_network(mock_data)
 

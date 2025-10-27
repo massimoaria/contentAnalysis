@@ -10,6 +10,7 @@ library(tibble)
 # ============================================================================
 
 test_that("map_citations_to_segments handles auto sections detection", {
+  skip_on_cran()
   citations_df <- tibble(
     citation_id = c("C1", "C2"),
     start_pos = c(10, 50),
@@ -33,6 +34,7 @@ test_that("map_citations_to_segments handles auto sections detection", {
 })
 
 test_that("map_citations_to_segments creates equal-length segments", {
+  skip_on_cran()
   citations_df <- tibble(
     citation_id = c("C1", "C2", "C3"),
     start_pos = c(10, 50, 100),
@@ -53,6 +55,7 @@ test_that("map_citations_to_segments creates equal-length segments", {
 })
 
 test_that("map_citations_to_segments warns when sections unavailable", {
+  skip_on_cran()
   citations_df <- tibble(
     citation_id = "C1",
     start_pos = 10,
@@ -77,6 +80,7 @@ test_that("map_citations_to_segments warns when sections unavailable", {
 # ============================================================================
 
 test_that("analyze_scientific_content requires text input", {
+  skip_on_cran()
   expect_error(
     analyze_scientific_content(),
     "argument \"text\" is missing"
@@ -84,6 +88,7 @@ test_that("analyze_scientific_content requires text input", {
 })
 
 test_that("analyze_scientific_content works with simple string", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "This is a simple test document with some words."
@@ -95,6 +100,7 @@ test_that("analyze_scientific_content works with simple string", {
 })
 
 test_that("analyze_scientific_content works with list input", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -113,6 +119,7 @@ test_that("analyze_scientific_content works with list input", {
 # ============================================================================
 
 test_that("analyze_scientific_content calculates basic text statistics", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "This is a test. This has words."
@@ -126,6 +133,7 @@ test_that("analyze_scientific_content calculates basic text statistics", {
 })
 
 test_that("analyze_scientific_content extracts word frequencies", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "test word test word test another"
@@ -143,6 +151,7 @@ test_that("analyze_scientific_content extracts word frequencies", {
 })
 
 test_that("analyze_scientific_content generates n-grams", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "machine learning is important for data science"
@@ -159,6 +168,7 @@ test_that("analyze_scientific_content generates n-grams", {
 })
 
 test_that("analyze_scientific_content removes stopwords", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "the quick brown fox jumps over the lazy dog"
@@ -185,6 +195,7 @@ test_that("analyze_scientific_content removes stopwords", {
 # ============================================================================
 
 test_that("analyze_scientific_content extracts author-year citations", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Research by Smith (2020) shows that machine learning (Jones, 2021) is important."
@@ -201,6 +212,7 @@ test_that("analyze_scientific_content extracts author-year citations", {
 })
 
 test_that("analyze_scientific_content extracts numbered citations", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Previous work [1] showed results. Another study [2] confirmed this."
@@ -218,6 +230,7 @@ test_that("analyze_scientific_content extracts numbered citations", {
 })
 
 test_that("analyze_scientific_content extracts et al. citations", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Smith et al. (2020) demonstrated the approach."
@@ -232,6 +245,7 @@ test_that("analyze_scientific_content extracts et al. citations", {
 })
 
 test_that("analyze_scientific_content parses multiple citations", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Research (Smith, 2020; Jones, 2021; Brown, 2022) shows results."
@@ -256,6 +270,7 @@ test_that("analyze_scientific_content parses multiple citations", {
 # ============================================================================
 
 test_that("analyze_scientific_content extracts citation contexts", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "The important work by Smith (2020) demonstrates this approach effectively."
@@ -275,6 +290,7 @@ test_that("analyze_scientific_content extracts citation contexts", {
 })
 
 test_that("analyze_scientific_content respects window_size", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Word1 word2 word3 word4 word5 Smith (2020) word6 word7 word8 word9 word10"
@@ -299,6 +315,7 @@ test_that("analyze_scientific_content respects window_size", {
 # ============================================================================
 
 test_that("analyze_scientific_content calculates citation metrics", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Smith (2020) and Jones (2021) show results. See also [1] and [2]."
@@ -316,6 +333,7 @@ test_that("analyze_scientific_content calculates citation metrics", {
 })
 
 test_that("analyze_scientific_content tracks narrative vs parenthetical", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Smith (2020) found that results (Jones, 2021) support the theory."
@@ -340,6 +358,7 @@ test_that("analyze_scientific_content tracks narrative vs parenthetical", {
 # ============================================================================
 
 test_that("analyze_scientific_content maps citations to sections", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -364,6 +383,7 @@ test_that("analyze_scientific_content maps citations to sections", {
 })
 
 test_that("analyze_scientific_content creates segments when no sections", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   long_text <- paste(
@@ -389,6 +409,7 @@ test_that("analyze_scientific_content creates segments when no sections", {
 # ============================================================================
 
 test_that("analyze_scientific_content parses references from text", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -410,6 +431,7 @@ test_that("analyze_scientific_content parses references from text", {
 })
 
 test_that("analyze_scientific_content handles missing references section", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Text without references section."
@@ -429,6 +451,7 @@ test_that("analyze_scientific_content handles missing references section", {
 # ============================================================================
 
 test_that("analyze_scientific_content retrieves from CrossRef with DOI", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
   skip_if_not_installed("httr2")
 
@@ -461,6 +484,7 @@ test_that("analyze_scientific_content retrieves from CrossRef with DOI", {
 })
 
 test_that("analyze_scientific_content handles CrossRef failure gracefully", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   # Mock CrossRef to fail
@@ -492,6 +516,7 @@ test_that("analyze_scientific_content handles CrossRef failure gracefully", {
 # ============================================================================
 
 test_that("analyze_scientific_content matches citations to references", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -517,6 +542,7 @@ test_that("analyze_scientific_content matches citations to references", {
 # ============================================================================
 
 test_that("analyze_scientific_content generates summary", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Test text with some words and content."
@@ -534,6 +560,7 @@ test_that("analyze_scientific_content generates summary", {
 # ============================================================================
 
 test_that("analyze_scientific_content returns complete structure", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Sample scientific text for analysis."
@@ -556,6 +583,7 @@ test_that("analyze_scientific_content returns complete structure", {
 })
 
 test_that("analyze_scientific_content has correct class", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Test text"
@@ -571,6 +599,7 @@ test_that("analyze_scientific_content has correct class", {
 # ============================================================================
 
 test_that("analyze_scientific_content respects min_word_length", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "a ab abc abcd abcde"
@@ -591,6 +620,7 @@ test_that("analyze_scientific_content respects min_word_length", {
 })
 
 test_that("analyze_scientific_content handles custom stopwords", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "custom word test custom word test"
@@ -610,6 +640,7 @@ test_that("analyze_scientific_content handles custom stopwords", {
 })
 
 test_that("analyze_scientific_content handles different ngram_range", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "machine learning is important"
@@ -630,6 +661,7 @@ test_that("analyze_scientific_content handles different ngram_range", {
 # ============================================================================
 
 test_that("analyze_scientific_content handles empty text", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- ""
@@ -641,6 +673,7 @@ test_that("analyze_scientific_content handles empty text", {
 })
 
 test_that("analyze_scientific_content handles very short text", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "Short"
@@ -651,6 +684,7 @@ test_that("analyze_scientific_content handles very short text", {
 })
 
 test_that("analyze_scientific_content handles text with no citations", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text <- "This text has no citations at all, just regular content."
@@ -666,6 +700,7 @@ test_that("analyze_scientific_content handles text with no citations", {
 # ============================================================================
 
 test_that("analyze_scientific_content complete workflow with sections", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -710,6 +745,7 @@ Brown, K., Davis, M., Wilson, P. (2022). DL Research. Nature."
 })
 
 test_that("analyze_scientific_content works without References section", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   text_list <- list(
@@ -728,6 +764,7 @@ test_that("analyze_scientific_content works without References section", {
 # ============================================================================
 
 test_that("analyze_scientific_content handles large text", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
   skip_on_cran()
 
@@ -747,6 +784,7 @@ test_that("analyze_scientific_content handles large text", {
 })
 
 test_that("analyze_scientific_content handles many citations", {
+  skip_on_cran()
   skip_if_not_installed("tidytext")
 
   # Mix di formati per assicurarsi di catturarne abbastanza

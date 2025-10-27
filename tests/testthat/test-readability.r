@@ -16,6 +16,7 @@ library(contentanalysis)
 # This is acceptable for readability indices as long as the algorithm is consistent.
 
 test_that("count_syllables handles basic words correctly", {
+  skip_on_cran()
   expect_equal(contentanalysis:::count_syllables("cat"), 1)
   expect_equal(contentanalysis:::count_syllables("happy"), 2)
   expect_equal(contentanalysis:::count_syllables("beautiful"), 3)
@@ -23,50 +24,57 @@ test_that("count_syllables handles basic words correctly", {
 })
 
 test_that("count_syllables handles silent 'e' correctly", {
-  expect_equal(contentanalysis:::count_syllables("make"), 1)  # ma-ke, but 'e' is silent
-  expect_equal(contentanalysis:::count_syllables("home"), 1)  # ho-me, but 'e' is silent
+  skip_on_cran()
+  expect_equal(contentanalysis:::count_syllables("make"), 1) # ma-ke, but 'e' is silent
+  expect_equal(contentanalysis:::count_syllables("home"), 1) # ho-me, but 'e' is silent
   expect_equal(contentanalysis:::count_syllables("table"), 2) # ta-ble, 'e' is not silent after 'l'
-  expect_equal(contentanalysis:::count_syllables("able"), 2)  # a-ble
+  expect_equal(contentanalysis:::count_syllables("able"), 2) # a-ble
 })
 
 test_that("count_syllables handles -ed endings correctly", {
-  expect_equal(contentanalysis:::count_syllables("walked"), 1)   # walk-ed (silent)
-  expect_equal(contentanalysis:::count_syllables("needed"), 2)   # need-ed (pronounced)
-  expect_equal(contentanalysis:::count_syllables("created"), 2)  # cre-at-ed (algorithm counts 2)
-  expect_equal(contentanalysis:::count_syllables("tried"), 1)    # tried (one syllable)
+  skip_on_cran()
+  expect_equal(contentanalysis:::count_syllables("walked"), 1) # walk-ed (silent)
+  expect_equal(contentanalysis:::count_syllables("needed"), 2) # need-ed (pronounced)
+  expect_equal(contentanalysis:::count_syllables("created"), 2) # cre-at-ed (algorithm counts 2)
+  expect_equal(contentanalysis:::count_syllables("tried"), 1) # tried (one syllable)
 })
 
 test_that("count_syllables handles -es endings correctly", {
-  expect_equal(contentanalysis:::count_syllables("boxes"), 1)    # box-es (algorithm counts 1)
-  expect_equal(contentanalysis:::count_syllables("tries"), 1)    # tries (one syllable)
-  expect_equal(contentanalysis:::count_syllables("files"), 2)    # files (algorithm counts 2)
+  skip_on_cran()
+  expect_equal(contentanalysis:::count_syllables("boxes"), 1) # box-es (algorithm counts 1)
+  expect_equal(contentanalysis:::count_syllables("tries"), 1) # tries (one syllable)
+  expect_equal(contentanalysis:::count_syllables("files"), 2) # files (algorithm counts 2)
 })
 
 test_that("count_syllables handles -ion endings correctly", {
-  expect_equal(contentanalysis:::count_syllables("action"), 3)    # ac-tion (algorithm counts 3)
-  expect_equal(contentanalysis:::count_syllables("nation"), 3)    # na-tion (algorithm counts 3)
+  skip_on_cran()
+  expect_equal(contentanalysis:::count_syllables("action"), 3) # ac-tion (algorithm counts 3)
+  expect_equal(contentanalysis:::count_syllables("nation"), 3) # na-tion (algorithm counts 3)
   expect_equal(contentanalysis:::count_syllables("education"), 5) # ed-u-ca-tion (algorithm counts 5)
 })
 
 test_that("count_syllables handles edge cases", {
+  skip_on_cran()
   expect_equal(contentanalysis:::count_syllables(""), 0)
   expect_equal(contentanalysis:::count_syllables(NA_character_), 0)
   expect_equal(contentanalysis:::count_syllables("a"), 1)
   expect_equal(contentanalysis:::count_syllables("I"), 1)
-  expect_equal(contentanalysis:::count_syllables("123"), 0)  # No letters
+  expect_equal(contentanalysis:::count_syllables("123"), 0) # No letters
 })
 
 test_that("count_syllables handles y as vowel", {
+  skip_on_cran()
   expect_equal(contentanalysis:::count_syllables("fly"), 1)
-  expect_equal(contentanalysis:::count_syllables("crying"), 1)   # cry-ing (algorithm counts 1)
-  expect_equal(contentanalysis:::count_syllables("rhythm"), 1)   # rhythm (algorithm counts 1)
+  expect_equal(contentanalysis:::count_syllables("crying"), 1) # cry-ing (algorithm counts 1)
+  expect_equal(contentanalysis:::count_syllables("rhythm"), 1) # rhythm (algorithm counts 1)
 })
 
 test_that("count_syllables handles diphthongs", {
-  expect_equal(contentanalysis:::count_syllables("bread"), 1)  # 'ea' is one vowel group
-  expect_equal(contentanalysis:::count_syllables("beat"), 1)   # 'ea' is one vowel group
-  expect_equal(contentanalysis:::count_syllables("coin"), 1)   # 'oi' is one vowel group
-  expect_equal(contentanalysis:::count_syllables("about"), 2)  # a-bout
+  skip_on_cran()
+  expect_equal(contentanalysis:::count_syllables("bread"), 1) # 'ea' is one vowel group
+  expect_equal(contentanalysis:::count_syllables("beat"), 1) # 'ea' is one vowel group
+  expect_equal(contentanalysis:::count_syllables("coin"), 1) # 'oi' is one vowel group
+  expect_equal(contentanalysis:::count_syllables("about"), 2) # a-bout
 })
 
 
@@ -75,25 +83,44 @@ test_that("count_syllables handles diphthongs", {
 # ============================================================================
 
 test_that("calculate_readability_indices returns correct structure", {
+  skip_on_cran()
   text <- "The cat sat on the mat. It was a sunny day."
   result <- calculate_readability_indices(text)
 
   expect_s3_class(result, "tbl_df")
   expect_equal(ncol(result), 4)
-  expect_true(all(c("flesch_kincaid_grade", "flesch_reading_ease",
-                    "automated_readability_index", "gunning_fog_index") %in% colnames(result)))
+  expect_true(all(
+    c(
+      "flesch_kincaid_grade",
+      "flesch_reading_ease",
+      "automated_readability_index",
+      "gunning_fog_index"
+    ) %in%
+      colnames(result)
+  ))
   expect_equal(nrow(result), 1)
 })
 
 test_that("calculate_readability_indices returns detailed stats when requested", {
+  skip_on_cran()
   text <- "The cat sat on the mat."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
   expect_s3_class(result, "tbl_df")
   expect_equal(ncol(result), 12)
-  expect_true(all(c("n_sentences", "n_words", "n_syllables", "n_characters",
-                    "n_complex_words", "avg_sentence_length",
-                    "avg_syllables_per_word", "pct_complex_words") %in% colnames(result)))
+  expect_true(all(
+    c(
+      "n_sentences",
+      "n_words",
+      "n_syllables",
+      "n_characters",
+      "n_complex_words",
+      "avg_sentence_length",
+      "avg_syllables_per_word",
+      "pct_complex_words"
+    ) %in%
+      colnames(result)
+  ))
 })
 
 
@@ -102,24 +129,27 @@ test_that("calculate_readability_indices returns detailed stats when requested",
 # ============================================================================
 
 test_that("calculate_readability_indices handles empty text", {
+  skip_on_cran()
   result <- calculate_readability_indices("")
 
-  expect_true(all(is.na(result[1,])))
+  expect_true(all(is.na(result[1, ])))
   expect_equal(nrow(result), 1)
 })
 
 test_that("calculate_readability_indices handles NA text", {
+  skip_on_cran()
   result <- calculate_readability_indices(NA_character_)
 
-  expect_true(all(is.na(result[1,])))
+  expect_true(all(is.na(result[1, ])))
   expect_equal(nrow(result), 1)
 })
 
 test_that("calculate_readability_indices handles text without sentences", {
+  skip_on_cran()
   result <- calculate_readability_indices("word word word")
 
   # Should still work - treats as one sentence
-  expect_false(all(is.na(result[1,])))
+  expect_false(all(is.na(result[1, ])))
 })
 
 
@@ -128,6 +158,7 @@ test_that("calculate_readability_indices handles text without sentences", {
 # ============================================================================
 
 test_that("calculate_readability_indices produces reasonable values for simple text", {
+  skip_on_cran()
   # Very simple text: short words, short sentences
   text <- "The cat sat. The dog ran. It was fun."
   result <- calculate_readability_indices(text, detailed = TRUE)
@@ -138,11 +169,12 @@ test_that("calculate_readability_indices produces reasonable values for simple t
   # - Few complex words
   expect_lt(result$flesch_kincaid_grade, 5)
   expect_gt(result$flesch_reading_ease, 70)
-  expect_equal(result$n_complex_words, 0)  # No words with 3+ syllables
+  expect_equal(result$n_complex_words, 0) # No words with 3+ syllables
   expect_lt(result$avg_syllables_per_word, 1.5)
 })
 
 test_that("calculate_readability_indices produces reasonable values for complex text", {
+  skip_on_cran()
   # Complex text: longer words, longer sentences
   text <- "The implementation of sophisticated methodologies necessitates comprehensive evaluation.
           Organizational restructuring facilitates operational efficiency."
@@ -159,6 +191,7 @@ test_that("calculate_readability_indices produces reasonable values for complex 
 })
 
 test_that("Flesch Reading Ease ranges are correct", {
+  skip_on_cran()
   # Test that very simple text gets high score (near 100)
   simple <- "The cat ran. The dog sat."
   result_simple <- calculate_readability_indices(simple)
@@ -176,6 +209,7 @@ test_that("Flesch Reading Ease ranges are correct", {
 # ============================================================================
 
 test_that("Flesch-Kincaid Grade Level formula is correct", {
+  skip_on_cran()
   # Manually verified example
   # Text: "The cat sat. It ran." (5 words, 2 sentences, 5 syllables)
   text <- "The cat sat. It ran."
@@ -200,6 +234,7 @@ test_that("Flesch-Kincaid Grade Level formula is correct", {
 })
 
 test_that("Flesch Reading Ease formula is correct", {
+  skip_on_cran()
   text <- "The cat sat. It ran."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
@@ -213,6 +248,7 @@ test_that("Flesch Reading Ease formula is correct", {
 })
 
 test_that("ARI formula is correct", {
+  skip_on_cran()
   text <- "The cat sat. It ran."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
@@ -231,6 +267,7 @@ test_that("ARI formula is correct", {
 })
 
 test_that("Gunning Fog Index formula is correct", {
+  skip_on_cran()
   text <- "The cat sat. It ran."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
@@ -252,6 +289,7 @@ test_that("Gunning Fog Index formula is correct", {
 # ============================================================================
 
 test_that("readability_multiple processes multiple texts", {
+  skip_on_cran()
   texts <- c(
     "The cat sat.",
     "The dog ran fast.",
@@ -266,6 +304,7 @@ test_that("readability_multiple processes multiple texts", {
 })
 
 test_that("readability_multiple handles text_id parameter", {
+  skip_on_cran()
   texts <- c("Text one.", "Text two.")
   ids <- c("doc1", "doc2")
 
@@ -273,10 +312,11 @@ test_that("readability_multiple handles text_id parameter", {
 
   expect_true("text_id" %in% colnames(result))
   expect_equal(result$text_id, ids)
-  expect_equal(which(colnames(result) == "text_id"), 1)  # Should be first column
+  expect_equal(which(colnames(result) == "text_id"), 1) # Should be first column
 })
 
 test_that("readability_multiple returns detailed stats when requested", {
+  skip_on_cran()
   texts <- c("The cat sat.", "The dog ran.")
 
   result <- readability_multiple(texts, detailed = TRUE)
@@ -286,6 +326,7 @@ test_that("readability_multiple returns detailed stats when requested", {
 })
 
 test_that("readability_multiple handles empty and NA texts", {
+  skip_on_cran()
   texts <- c("Normal text.", "", NA_character_)
 
   result <- readability_multiple(texts, detailed = TRUE)
@@ -297,8 +338,9 @@ test_that("readability_multiple handles empty and NA texts", {
 })
 
 test_that("readability_multiple validates text_id length", {
+  skip_on_cran()
   texts <- c("Text one.", "Text two.")
-  ids <- c("doc1", "doc2", "doc3")  # Wrong length
+  ids <- c("doc1", "doc2", "doc3") # Wrong length
 
   expect_error(
     readability_multiple(texts, text_id = ids),
@@ -312,17 +354,19 @@ test_that("readability_multiple validates text_id length", {
 # ============================================================================
 
 test_that("Word and syllable counts are consistent", {
+  skip_on_cran()
   text <- "Hello world. This is a test of the system."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
   # Basic sanity checks
   expect_gt(result$n_words, 0)
   expect_gt(result$n_syllables, 0)
-  expect_gte(result$n_syllables, result$n_words)  # At least 1 syllable per word
+  expect_gte(result$n_syllables, result$n_words) # At least 1 syllable per word
   expect_equal(result$n_sentences, 2)
 })
 
 test_that("Complex words percentage is between 0 and 100", {
+  skip_on_cran()
   text <- "The quick brown fox jumps over the lazy dog."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
@@ -331,13 +375,19 @@ test_that("Complex words percentage is between 0 and 100", {
 })
 
 test_that("Average metrics are calculated correctly", {
+  skip_on_cran()
   text <- "Hello. World."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
   expect_equal(result$avg_sentence_length, result$n_words / result$n_sentences)
-  expect_equal(result$avg_syllables_per_word, result$n_syllables / result$n_words)
-  expect_equal(result$pct_complex_words,
-               (result$n_complex_words / result$n_words) * 100)
+  expect_equal(
+    result$avg_syllables_per_word,
+    result$n_syllables / result$n_words
+  )
+  expect_equal(
+    result$pct_complex_words,
+    (result$n_complex_words / result$n_words) * 100
+  )
 })
 
 
@@ -346,6 +396,7 @@ test_that("Average metrics are calculated correctly", {
 # ============================================================================
 
 test_that("Readability indices work on academic text", {
+  skip_on_cran()
   text <- "The present study investigates the relationship between socioeconomic
            status and educational attainment. Utilizing a comprehensive dataset,
            we employ multivariate regression analysis to examine these associations."
@@ -360,6 +411,7 @@ test_that("Readability indices work on academic text", {
 })
 
 test_that("Readability indices work on children's text", {
+  skip_on_cran()
   text <- "The cat is big. The dog is small. They like to play.
           They run and jump. It is fun to watch them."
 
@@ -373,6 +425,7 @@ test_that("Readability indices work on children's text", {
 })
 
 test_that("Readability indices work on technical documentation", {
+  skip_on_cran()
   text <- "To initialize the configuration, execute the following command:
           'npm install'. Subsequently, modify the environment variables
           in the .env file according to your specifications."
@@ -391,6 +444,7 @@ test_that("Readability indices work on technical documentation", {
 # ============================================================================
 
 test_that("Sentence detection handles multiple punctuation marks", {
+  skip_on_cran()
   text <- "What is this? It is a test! This works."
   result <- calculate_readability_indices(text, detailed = TRUE)
 
@@ -398,6 +452,7 @@ test_that("Sentence detection handles multiple punctuation marks", {
 })
 
 test_that("Sentence detection handles missing final punctuation", {
+  skip_on_cran()
   text <- "This is a sentence"
   result <- calculate_readability_indices(text, detailed = TRUE)
 
@@ -405,6 +460,7 @@ test_that("Sentence detection handles missing final punctuation", {
 })
 
 test_that("Sentence detection handles multiple spaces", {
+  skip_on_cran()
   text <- "First sentence.  Second sentence.   Third sentence."
   result <- calculate_readability_indices(text, detailed = TRUE)
 

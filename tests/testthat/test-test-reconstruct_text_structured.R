@@ -4,13 +4,24 @@
 library(testthat)
 
 # Helper to create mock column data
-create_column_data <- function(texts, y_coords, x_coords = NULL,
-                               heights = NULL, widths = NULL) {
+create_column_data <- function(
+  texts,
+  y_coords,
+  x_coords = NULL,
+  heights = NULL,
+  widths = NULL
+) {
   n <- length(texts)
 
-  if (is.null(x_coords)) x_coords <- rep(100, n)
-  if (is.null(heights)) heights <- rep(12, n)
-  if (is.null(widths)) widths <- rep(50, n)
+  if (is.null(x_coords)) {
+    x_coords <- rep(100, n)
+  }
+  if (is.null(heights)) {
+    heights <- rep(12, n)
+  }
+  if (is.null(widths)) {
+    widths <- rep(50, n)
+  }
 
   data.frame(
     x = x_coords,
@@ -24,6 +35,7 @@ create_column_data <- function(texts, y_coords, x_coords = NULL,
 
 # Test 1: Empty data frame
 test_that("reconstruct_text_structured handles empty data frame", {
+  skip_on_cran()
   empty_data <- data.frame(
     x = numeric(0),
     y = numeric(0),
@@ -41,6 +53,7 @@ test_that("reconstruct_text_structured handles empty data frame", {
 
 # Test 2: Single line of text
 test_that("reconstruct_text_structured handles single line", {
+  skip_on_cran()
   single_line <- create_column_data(
     texts = c("Hello", "world", "test"),
     y_coords = c(100, 100, 100),
@@ -56,6 +69,7 @@ test_that("reconstruct_text_structured handles single line", {
 
 # Test 3: Multiple lines - preserve structure
 test_that("reconstruct_text_structured preserves line structure", {
+  skip_on_cran()
   multi_line <- create_column_data(
     texts = c("First", "line", "Second", "line", "Third", "line"),
     y_coords = c(100, 100, 120, 120, 140, 140),
@@ -76,6 +90,7 @@ test_that("reconstruct_text_structured preserves line structure", {
 
 # Test 4: Multiple lines - no structure preservation
 test_that("reconstruct_text_structured creates continuous text", {
+  skip_on_cran()
   multi_line <- create_column_data(
     texts = c("First", "line", "Second", "line"),
     y_coords = c(100, 100, 120, 120),
@@ -95,6 +110,7 @@ test_that("reconstruct_text_structured creates continuous text", {
 
 # Test 5: Title detection - all caps
 test_that("reconstruct_text_structured identifies CAPS titles", {
+  skip_on_cran()
   data_with_title <- create_column_data(
     texts = c("INTRODUCTION", "This is regular text.", "More text here."),
     y_coords = c(100, 130, 145)
@@ -114,6 +130,7 @@ test_that("reconstruct_text_structured identifies CAPS titles", {
 
 # Test 6: Title detection - numbered section
 test_that("reconstruct_text_structured identifies numbered sections", {
+  skip_on_cran()
   data_with_section <- create_column_data(
     texts = c("1. Methods", "This describes the methods.", "More details."),
     y_coords = c(100, 130, 145)
@@ -132,8 +149,13 @@ test_that("reconstruct_text_structured identifies numbered sections", {
 
 # Test 7: Title detection - subsection numbering
 test_that("reconstruct_text_structured identifies subsection numbers", {
+  skip_on_cran()
   data_with_subsection <- create_column_data(
-    texts = c("2.1 Data Collection", "We collected data from...", "Analysis followed."),
+    texts = c(
+      "2.1 Data Collection",
+      "We collected data from...",
+      "Analysis followed."
+    ),
     y_coords = c(100, 130, 145)
   )
 
@@ -148,8 +170,13 @@ test_that("reconstruct_text_structured identifies subsection numbers", {
 
 # Test 8: Reference detection
 test_that("reconstruct_text_structured identifies reference starts", {
+  skip_on_cran()
   data_with_reference <- create_column_data(
-    texts = c("Regular text here.", "Smith, J. Research in AI.", "More references."),
+    texts = c(
+      "Regular text here.",
+      "Smith, J. Research in AI.",
+      "More references."
+    ),
     y_coords = c(100, 130, 145)
   )
 
@@ -167,8 +194,13 @@ test_that("reconstruct_text_structured identifies reference starts", {
 
 # Test 9: Sentence end detection for paragraph breaks
 test_that("reconstruct_text_structured creates paragraphs at sentence ends", {
+  skip_on_cran()
   data_with_sentences <- create_column_data(
-    texts = c("First sentence ends here.", "New sentence starts.", "Continues text."),
+    texts = c(
+      "First sentence ends here.",
+      "New sentence starts.",
+      "Continues text."
+    ),
     y_coords = c(100, 130, 145)
   )
 
@@ -183,6 +215,7 @@ test_that("reconstruct_text_structured creates paragraphs at sentence ends", {
 
 # Test 10: No height column (edge case)
 test_that("reconstruct_text_structured handles missing height column", {
+  skip_on_cran()
   data_no_height <- data.frame(
     x = c(100, 100, 100),
     y = c(100, 120, 140),
@@ -203,10 +236,11 @@ test_that("reconstruct_text_structured handles missing height column", {
 
 # Test 11: Line tolerance grouping
 test_that("reconstruct_text_structured groups lines with similar y coords", {
+  skip_on_cran()
   # Y coordinates within tolerance (4 pixels) should be same line
   close_y <- create_column_data(
     texts = c("Word1", "Word2", "Word3"),
-    y_coords = c(100, 101, 102),  # Within 4 pixel tolerance
+    y_coords = c(100, 101, 102), # Within 4 pixel tolerance
     x_coords = c(50, 100, 150)
   )
 
@@ -219,9 +253,10 @@ test_that("reconstruct_text_structured groups lines with similar y coords", {
 
 # Test 12: Line separation with different y coords
 test_that("reconstruct_text_structured separates lines with different y coords", {
+  skip_on_cran()
   far_y <- create_column_data(
     texts = c("Line1", "Line2", "Line3"),
-    y_coords = c(100, 120, 140),  # More than 4 pixel difference
+    y_coords = c(100, 120, 140), # More than 4 pixel difference
     x_coords = c(50, 50, 50)
   )
 
@@ -235,6 +270,7 @@ test_that("reconstruct_text_structured separates lines with different y coords",
 
 # Test 13: X coordinate sorting within lines
 test_that("reconstruct_text_structured sorts words by x coordinate", {
+  skip_on_cran()
   unsorted_x <- create_column_data(
     texts = c("Third", "First", "Second"),
     y_coords = c(100, 100, 100),
@@ -250,10 +286,11 @@ test_that("reconstruct_text_structured sorts words by x coordinate", {
 
 # Test 14: Font size variation (title detection)
 test_that("reconstruct_text_structured uses font size for title detection", {
+  skip_on_cran()
   varying_fonts <- create_column_data(
     texts = c("BIG TITLE", "Normal text here", "More normal"),
     y_coords = c(100, 130, 145),
-    heights = c(18, 12, 12)  # Larger font for title
+    heights = c(18, 12, 12) # Larger font for title
   )
 
   result <- contentanalysis:::reconstruct_text_structured(
@@ -267,6 +304,7 @@ test_that("reconstruct_text_structured uses font size for title detection", {
 
 # Test 15: Very long line (not a title)
 test_that("reconstruct_text_structured doesn't treat long lines as titles", {
+  skip_on_cran()
   long_line <- create_column_data(
     texts = paste(rep("word", 30), collapse = " "),
     y_coords = 100
@@ -280,6 +318,7 @@ test_that("reconstruct_text_structured doesn't treat long lines as titles", {
 
 # Test 16: Short non-caps line (not necessarily a title)
 test_that("reconstruct_text_structured handles short mixed-case lines", {
+  skip_on_cran()
   short_mixed <- create_column_data(
     texts = c("Short line", "Another text", "More text"),
     y_coords = c(100, 120, 140)
@@ -293,6 +332,7 @@ test_that("reconstruct_text_structured handles short mixed-case lines", {
 
 # Test 17: Multiple spaces handling
 test_that("reconstruct_text_structured normalizes whitespace", {
+  skip_on_cran()
   multi_space <- create_column_data(
     texts = c("Word1", "  ", "Word2", "   ", "Word3"),
     y_coords = c(100, 100, 100, 100, 100),
@@ -308,6 +348,7 @@ test_that("reconstruct_text_structured normalizes whitespace", {
 
 # Test 18: Empty text elements
 test_that("reconstruct_text_structured filters empty text", {
+  skip_on_cran()
   with_empty <- create_column_data(
     texts = c("Word1", "", "Word2", "  ", "Word3"),
     y_coords = c(100, 100, 100, 100, 100),
@@ -324,6 +365,7 @@ test_that("reconstruct_text_structured filters empty text", {
 
 # Test 19: Complex reference patterns
 test_that("reconstruct_text_structured handles hyphenated author names", {
+  skip_on_cran()
   hyphenated_ref <- create_column_data(
     texts = c("Regular text.", "Smith-Jones, A. Paper title.", "More text."),
     y_coords = c(100, 130, 160)
@@ -340,6 +382,7 @@ test_that("reconstruct_text_structured handles hyphenated author names", {
 
 # Test 20: Paragraph detection with proper capitalization
 test_that("reconstruct_text_structured detects paragraph breaks", {
+  skip_on_cran()
   paragraphs <- create_column_data(
     texts = c(
       "This is the end of first paragraph.",
@@ -362,6 +405,7 @@ test_that("reconstruct_text_structured detects paragraph breaks", {
 
 # Test 21: Preserving title after title
 test_that("reconstruct_text_structured handles consecutive titles", {
+  skip_on_cran()
   consecutive_titles <- create_column_data(
     texts = c("MAIN TITLE", "SUBTITLE", "Regular text follows"),
     y_coords = c(100, 115, 145)
@@ -379,6 +423,7 @@ test_that("reconstruct_text_structured handles consecutive titles", {
 
 # Test 22: Mixed content with all features
 test_that("reconstruct_text_structured handles complex mixed content", {
+  skip_on_cran()
   complex_data <- create_column_data(
     texts = c(
       "INTRODUCTION",
@@ -412,6 +457,7 @@ test_that("reconstruct_text_structured handles complex mixed content", {
 
 # Test 23: Y-coordinate ordering
 test_that("reconstruct_text_structured orders lines by y coordinate", {
+  skip_on_cran()
   unordered_y <- create_column_data(
     texts = c("Third", "First", "Second"),
     y_coords = c(300, 100, 200)
@@ -426,6 +472,7 @@ test_that("reconstruct_text_structured orders lines by y coordinate", {
 
 # Test 24: Continuous text mode with long content
 test_that("continuous mode creates single-line output", {
+  skip_on_cran()
   long_content <- create_column_data(
     texts = rep("word", 20),
     y_coords = rep(c(100, 120, 140, 160), each = 5)
@@ -442,6 +489,7 @@ test_that("continuous mode creates single-line output", {
 
 # Test 25: Edge case - all caps but long (not a title)
 test_that("long all-caps text is not treated as title", {
+  skip_on_cran()
   long_caps <- create_column_data(
     texts = paste(rep("WORD", 50), collapse = " "),
     y_coords = 100
