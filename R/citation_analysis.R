@@ -634,17 +634,28 @@ analyze_scientific_content <- function(
     for (i in 1:nrow(all_citations)) {
       citation <- all_citations[i, ]
 
-      if (citation$citation_type == "complex_multiple_citations") {
+      # Handle both complex_multiple_citations and multiple_citations_semicolon
+      if (
+        citation$citation_type %in%
+          c("complex_multiple_citations", "multiple_citations_semicolon")
+      ) {
+        # Remove opening parenthesis and optional prefixes (see, e.g., cf., etc.)
         inner_text <- stringr::str_replace(
           citation$citation_text,
-          "^\\((?:see\\s+)?(?:e\\.g\\.\\s+)?",
+          "^\\((?:see\\s+)?(?:e\\.g\\.\\s+)?(?:cf\\.\\s+)?(?:compare\\s+)?",
           ""
         )
+        # Remove closing parenthesis
         inner_text <- stringr::str_replace(inner_text, "\\)$", "")
+
+        # Split by semicolon to get individual citations
         individual_citations <- stringr::str_split(inner_text, "\\s*;\\s*")[[1]]
 
+        # Create a row for each individual citation
         for (j in seq_along(individual_citations)) {
           indiv_cite <- stringr::str_trim(individual_citations[j])
+
+          # Only process if it contains a year (4 digits)
           if (stringr::str_detect(indiv_cite, "\\d{4}")) {
             parsed_row <- tibble::tibble(
               citation_type = "parsed_from_multiple",
@@ -658,6 +669,7 @@ analyze_scientific_content <- function(
           }
         }
       } else {
+        # For non-multiple citations, keep them as is
         citation$original_complex_citation <- NA
         parsed_citations <- dplyr::bind_rows(parsed_citations, citation)
       }
@@ -1380,27 +1392,180 @@ safe_oa_fetch <- function(
 }
 
 add_reference_info <- function(df) {
-  # Funzione helper per estrarre l'iniziale del nome
+  # Helper function to normalize names for comparison
+  # Removes accents, diacritics, and converts to lowercase
+  normalize_name <- function(name) {
+    if (is.na(name) || name == "") {
+      return("")
+    }
+
+    name <- tolower(trimws(name))
+
+    # a variants
+    name <- gsub(
+      "[\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u0101\u0103\u0105]",
+      "a",
+      name
+    )
+    # e variants
+    name <- gsub("[\u00e8\u00e9\u00ea\u00eb\u0113\u0117\u0119]", "e", name)
+    # i variants
+    name <- gsub("[\u00ec\u00ed\u00ee\u00ef\u012b\u012f\u0131]", "i", name)
+    # o variants
+    name <- gsub(
+      "[\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8\u014d\u0151]",
+      "o",
+      name
+    )
+    # u variants
+    name <- gsub("[\u00f9\u00fa\u00fb\u00fc\u016b\u0171\u0173]", "u", name)
+    # y variants
+    name <- gsub("[\u00fd\u00ff]", "y", name)
+    # n variants
+    name <- gsub("[\u00f1\u0144]", "n", name)
+    # c variants
+    name <- gsub("[\u00e7\u0107\u010d]", "c", name)
+    # s variants
+    name <- gsub("[\u015b\u0161\u015f]", "s", name)
+    # z variants
+    name <- gsub("[\u017a\u017c\u017e]", "z", name)
+    # Special characters
+    name <- gsub("\u00df", "ss", name)
+    name <- gsub("\u00e6", "ae", name)
+    name <- gsub("\u0153", "oe", name)
+    name <- gsub("\u0142", "l", name)
+    name <- gsub("\u0111", "d", name)
+
+    return(name)
+  }
+
+  # Helper function to extract initials from given names
   get_initial <- function(full_name) {
-    # Rimuove il cognome (ultima parola) e prende l'iniziale delle altre parole
+    if (is.na(full_name) || full_name == "") {
+      return("")
+    }
+
     parts <- strsplit(full_name, " ")[[1]]
+
     if (length(parts) <= 1) {
       return("")
     }
-    # Prende tutte le parole tranne l'ultima (cognome)
-    first_names <- parts[-length(parts)]
-    # Estrae le iniziali
-    initials <- sapply(first_names, function(x) substr(x, 1, 1))
-    return(paste0(initials, collapse = "."))
+
+    # Common surname prefixes in various languages
+    surname_prefixes <- c(
+      "van",
+      "von",
+      "de",
+      "di",
+      "da",
+      "del",
+      "della",
+      "le",
+      "la",
+      "du",
+      "des",
+      "van der",
+      "van den",
+      "von der",
+      "von dem",
+      "de la",
+      "de las",
+      "de los"
+    )
+
+    # Normalize parts for comparison
+    parts_normalized <- sapply(parts, normalize_name)
+
+    # Find where surname starts
+    surname_start <- length(parts) # Default: last word only
+
+    for (i in 1:(length(parts) - 1)) {
+      # Check single word prefix
+      if (parts_normalized[i] %in% surname_prefixes) {
+        surname_start <- i
+        break
+      }
+
+      # Check two-word prefix (e.g., "van der")
+      if (i < length(parts) - 1) {
+        two_word <- paste(parts_normalized[i], parts_normalized[i + 1])
+        if (two_word %in% surname_prefixes) {
+          surname_start <- i
+          break
+        }
+      }
+    }
+
+    # Extract given names (everything before surname)
+    if (surname_start > 1) {
+      first_names <- parts[1:(surname_start - 1)]
+      initials <- sapply(first_names, function(x) substr(x, 1, 1))
+      return(paste0(initials, collapse = "."))
+    }
+
+    return("")
   }
 
-  # Funzione helper per estrarre il cognome
+  # Helper function to extract surname with prefix support
   get_surname <- function(full_name) {
+    if (is.na(full_name) || full_name == "") {
+      return(NA)
+    }
+
     parts <- strsplit(full_name, " ")[[1]]
+
+    if (length(parts) == 1) {
+      return(parts[1])
+    }
+
+    # Common surname prefixes in various languages
+    surname_prefixes <- c(
+      "van",
+      "von",
+      "de",
+      "di",
+      "da",
+      "del",
+      "della",
+      "le",
+      "la",
+      "du",
+      "des",
+      "van der",
+      "van den",
+      "von der",
+      "von dem",
+      "de la",
+      "de las",
+      "de los"
+    )
+
+    # Normalize parts for comparison (but keep original for output)
+    parts_normalized <- sapply(parts, normalize_name)
+
+    # Find if any surname prefix exists
+    for (i in 1:(length(parts) - 1)) {
+      # Check single word prefix
+      if (parts_normalized[i] %in% surname_prefixes) {
+        # Surname starts from this prefix (return ORIGINAL, not normalized)
+        return(paste(parts[i:length(parts)], collapse = " "))
+      }
+
+      # Check two-word prefix (e.g., "van der")
+      if (i < length(parts) - 1) {
+        two_word <- paste(parts_normalized[i], parts_normalized[i + 1])
+        if (two_word %in% surname_prefixes) {
+          # Return ORIGINAL, not normalized
+          return(paste(parts[i:length(parts)], collapse = " "))
+        }
+      }
+    }
+
+    # If no prefix found, return only the last word
     return(parts[length(parts)])
   }
 
-  # Funzione helper per creare la stringa degli autori
+  # Helper function to create the authors string
   create_authors_string <- function(authorships) {
     if (is.null(authorships) || nrow(authorships) == 0) {
       return("Unknown")
@@ -1409,7 +1574,7 @@ add_reference_info <- function(df) {
     authors <- authorships$display_name
     n_authors <- length(authors)
 
-    # Formatta ogni autore come "Surname, I."
+    # Format each author as "Surname, I."
     formatted_authors <- sapply(authors, function(author) {
       surname <- get_surname(author)
       initial <- get_initial(author)
@@ -1420,11 +1585,11 @@ add_reference_info <- function(df) {
       }
     })
 
-    # Concatena gli autori con virgole
+    # Concatenate authors with commas
     return(paste(formatted_authors, collapse = ", "))
   }
 
-  # Funzione helper per contare gli autori
+  # Helper function to count authors
   count_authors <- function(authorships) {
     if (is.null(authorships) || nrow(authorships) == 0) {
       return(0)
@@ -1432,15 +1597,15 @@ add_reference_info <- function(df) {
     return(nrow(authorships))
   }
 
-  # Aggiunge la colonna n_authors
+  # Add n_authors column
   df$n_authors <- sapply(df$authorships, count_authors)
 
-  # Aggiunge la colonna ref_full_name
+  # Add ref_full_name column
   df$ref_full_name <- mapply(
     function(authorships, year, title, source) {
       authors_str <- create_authors_string(authorships)
 
-      # Gestisce valori mancanti
+      # Handle missing values
       year_str <- ifelse(is.na(year), "n.d.", as.character(year))
       title_str <- ifelse(is.na(title) || title == "", "Untitled", title)
       source_str <- ifelse(
@@ -1449,7 +1614,7 @@ add_reference_info <- function(df) {
         source
       )
 
-      # Crea la reference completa
+      # Create the complete reference
       paste0(
         authors_str,
         " (",
@@ -1489,12 +1654,109 @@ complete_references_from_oa <- function(
   references_oa,
   verbose = TRUE
 ) {
-  # Helper function to extract surname from full name
+  # Helper function to normalize names for comparison
+  # Removes accents, diacritics, and converts to lowercase
+  normalize_name <- function(name) {
+    if (is.na(name) || name == "") {
+      return("")
+    }
+
+    name <- tolower(trimws(name))
+
+    # a variants
+    name <- gsub(
+      "[\u00e0\u00e1\u00e2\u00e3\u00e4\u00e5\u0101\u0103\u0105]",
+      "a",
+      name
+    )
+    # e variants
+    name <- gsub("[\u00e8\u00e9\u00ea\u00eb\u0113\u0117\u0119]", "e", name)
+    # i variants
+    name <- gsub("[\u00ec\u00ed\u00ee\u00ef\u012b\u012f\u0131]", "i", name)
+    # o variants
+    name <- gsub(
+      "[\u00f2\u00f3\u00f4\u00f5\u00f6\u00f8\u014d\u0151]",
+      "o",
+      name
+    )
+    # u variants
+    name <- gsub("[\u00f9\u00fa\u00fb\u00fc\u016b\u0171\u0173]", "u", name)
+    # y variants
+    name <- gsub("[\u00fd\u00ff]", "y", name)
+    # n variants
+    name <- gsub("[\u00f1\u0144]", "n", name)
+    # c variants
+    name <- gsub("[\u00e7\u0107\u010d]", "c", name)
+    # s variants
+    name <- gsub("[\u015b\u0161\u015f]", "s", name)
+    # z variants
+    name <- gsub("[\u017a\u017c\u017e]", "z", name)
+    # Special characters
+    name <- gsub("\u00df", "ss", name)
+    name <- gsub("\u00e6", "ae", name)
+    name <- gsub("\u0153", "oe", name)
+    name <- gsub("\u0142", "l", name)
+    name <- gsub("\u0111", "d", name)
+
+    return(name)
+  }
+
+  # Helper function to extract surname with prefix support
   get_surname <- function(full_name) {
     if (is.na(full_name) || full_name == "") {
       return(NA)
     }
+
     parts <- strsplit(full_name, " ")[[1]]
+
+    if (length(parts) == 1) {
+      return(parts[1])
+    }
+
+    # Common surname prefixes in various languages
+    surname_prefixes <- c(
+      "van",
+      "von",
+      "de",
+      "di",
+      "da",
+      "del",
+      "della",
+      "le",
+      "la",
+      "du",
+      "des",
+      "van der",
+      "van den",
+      "von der",
+      "von dem",
+      "de la",
+      "de las",
+      "de los"
+    )
+
+    # Normalize parts for comparison (but keep original for output)
+    parts_normalized <- sapply(parts, normalize_name)
+
+    # Find if any surname prefix exists
+    for (i in 1:(length(parts) - 1)) {
+      # Check single word prefix
+      if (parts_normalized[i] %in% surname_prefixes) {
+        # Surname starts from this prefix (return ORIGINAL, not normalized)
+        return(paste(parts[i:length(parts)], collapse = " "))
+      }
+
+      # Check two-word prefix (e.g., "van der")
+      if (i < length(parts) - 1) {
+        two_word <- paste(parts_normalized[i], parts_normalized[i + 1])
+        if (two_word %in% surname_prefixes) {
+          # Return ORIGINAL, not normalized
+          return(paste(parts[i:length(parts)], collapse = " "))
+        }
+      }
+    }
+
+    # If no prefix found, return only the last word
     return(parts[length(parts)])
   }
 
@@ -1503,13 +1765,66 @@ complete_references_from_oa <- function(
     if (is.na(full_name) || full_name == "") {
       return("")
     }
+
     parts <- strsplit(full_name, " ")[[1]]
+
     if (length(parts) <= 1) {
       return("")
     }
-    first_names <- parts[-length(parts)]
-    initials <- sapply(first_names, function(x) substr(x, 1, 1))
-    return(paste0(initials, collapse = "."))
+
+    # Common surname prefixes in various languages
+    surname_prefixes <- c(
+      "van",
+      "von",
+      "de",
+      "di",
+      "da",
+      "del",
+      "della",
+      "le",
+      "la",
+      "du",
+      "des",
+      "van der",
+      "van den",
+      "von der",
+      "von dem",
+      "de la",
+      "de las",
+      "de los"
+    )
+
+    # Normalize parts for comparison
+    parts_normalized <- sapply(parts, normalize_name)
+
+    # Find where surname starts
+    surname_start <- length(parts) # Default: last word only
+
+    for (i in 1:(length(parts) - 1)) {
+      # Check single word prefix
+      if (parts_normalized[i] %in% surname_prefixes) {
+        surname_start <- i
+        break
+      }
+
+      # Check two-word prefix (e.g., "van der")
+      if (i < length(parts) - 1) {
+        two_word <- paste(parts_normalized[i], parts_normalized[i + 1])
+        if (two_word %in% surname_prefixes) {
+          surname_start <- i
+          break
+        }
+      }
+    }
+
+    # Extract given names (everything before surname)
+    if (surname_start > 1) {
+      first_names <- parts[1:(surname_start - 1)]
+      initials <- sapply(first_names, function(x) substr(x, 1, 1))
+      return(paste0(initials, collapse = "."))
+    }
+
+    return("")
   }
 
   # Helper function to format authors list
@@ -1532,7 +1847,7 @@ complete_references_from_oa <- function(
     return(paste(formatted_authors, collapse = ", "))
   }
 
-  # Helper function to get first author
+  # Helper function to get first author surname
   get_first_author <- function(authorships) {
     if (is.null(authorships) || nrow(authorships) == 0) {
       return(NA)
@@ -1631,9 +1946,10 @@ complete_references_from_oa <- function(
 
       if (!is.na(oa_first_author) && oa_first_author != "") {
         references$ref_first_author[i] <- oa_first_author
-        references$ref_first_author_normalized[i] <- tolower(trimws(
+        # Normalize the first author name for comparison
+        references$ref_first_author_normalized[i] <- normalize_name(
           oa_first_author
-        ))
+        )
       }
 
       if (!is.na(oa_n_authors)) {
