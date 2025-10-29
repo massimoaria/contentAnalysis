@@ -256,7 +256,7 @@ extract_doi_internal <- function(info, return_all = FALSE) {
 extract_title_internal <- function(info) {
   # Check Title field first
   if (!is.null(info$keys$Title) && nchar(info$keys$Title) > 0) {
-    return(trimws(info$keys$Title))
+    return(clean_text_encoding(trimws(info$keys$Title)))
   }
 
   # Check metadata XML for dc:title
@@ -268,7 +268,7 @@ extract_title_internal <- function(info) {
     )
 
     if (length(title_match) > 0) {
-      # Extract content from rdf:li tags
+      # Try to extract content from rdf:li tags first (structured format)
       li_content <- regmatches(
         title_match[1],
         regexpr("<rdf:li[^>]*>([^<]+)</rdf:li>", title_match[1], perl = TRUE)
@@ -279,6 +279,17 @@ extract_title_internal <- function(info) {
         title <- gsub("<.*?>", "", li_content[1])
         if (nchar(trimws(title)) > 0) {
           return(clean_text_encoding(trimws(title)))
+        }
+      } else {
+        # If no rdf:li, extract text directly from dc:title
+        title <- gsub("(?s)<dc:title>\\s*", "", title_match[1], perl = TRUE)
+        title <- gsub("\\s*</dc:title>", "", title, perl = TRUE)
+        # Remove any remaining XML tags
+        title <- gsub("<.*?>", "", title)
+        title <- trimws(title)
+
+        if (nchar(title) > 0) {
+          return(clean_text_encoding(title))
         }
       }
     }
