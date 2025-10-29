@@ -39,9 +39,9 @@ are automatically filtered out to return article DOIs.
 For other metadata:
 \itemize{
 \item Title: extracted from Title field or dc:title in XMP metadata
-\item Authors: extracted from Author/Creator fields or dc:creator in XMP metadata
+\item Authors: extracted from dc:creator in XMP metadata or Author/Creator fields
 \item Journal: extracted from Subject, prism:publicationName in XMP metadata
-\item Year: extracted from created/modified dates, prism:coverDate, or title
+\item Year: extracted from prism:coverDate, created/modified dates (avoiding DOI patterns)
 }
 
 Common DOI prefixes are automatically removed. The function uses regex pattern

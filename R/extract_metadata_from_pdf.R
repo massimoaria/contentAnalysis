@@ -28,9 +28,9 @@
 #' For other metadata:
 #' \itemize{
 #'   \item Title: extracted from Title field or dc:title in XMP metadata
-#'   \item Authors: extracted from Author/Creator fields or dc:creator in XMP metadata
+#'   \item Authors: extracted from dc:creator in XMP metadata or Author/Creator fields
 #'   \item Journal: extracted from Subject, prism:publicationName in XMP metadata
-#'   \item Year: extracted from created/modified dates, prism:coverDate, or title
+#'   \item Year: extracted from prism:coverDate, created/modified dates (avoiding DOI patterns)
 #' }
 #'
 #' Common DOI prefixes are automatically removed. The function uses regex pattern
@@ -261,17 +261,25 @@ extract_title_internal <- function(info) {
 
   # Check metadata XML for dc:title
   if (!is.null(info$metadata) && nchar(info$metadata) > 0) {
-    # Extract dc:title
+    # Extract dc:title with multiline support
     title_match <- regmatches(
       info$metadata,
-      regexpr("<dc:title>([^<]+)</dc:title>", info$metadata, perl = TRUE)
+      regexpr("(?s)<dc:title>.*?</dc:title>", info$metadata, perl = TRUE)
     )
 
     if (length(title_match) > 0) {
-      # Remove XML tags
-      title <- gsub("<.*?>", "", title_match[1])
-      if (nchar(trimws(title)) > 0) {
-        return(trimws(title))
+      # Extract content from rdf:li tags
+      li_content <- regmatches(
+        title_match[1],
+        regexpr("<rdf:li[^>]*>([^<]+)</rdf:li>", title_match[1], perl = TRUE)
+      )
+
+      if (length(li_content) > 0) {
+        # Remove XML tags
+        title <- gsub("<.*?>", "", li_content[1])
+        if (nchar(trimws(title)) > 0) {
+          return(clean_text_encoding(trimws(title)))
+        }
       }
     }
   }
@@ -284,7 +292,7 @@ extract_title_internal <- function(info) {
       if (field_name %in% names(info$keys)) {
         field <- info$keys[[field_name]]
         if (!is.null(field) && nchar(field) > 0) {
-          return(trimws(field))
+          return(clean_text_encoding(trimws(field)))
         }
       }
     }
@@ -298,12 +306,7 @@ extract_title_internal <- function(info) {
 #' @keywords internal
 #' @noRd
 extract_authors_internal <- function(info) {
-  # Check Author field first
-  if (!is.null(info$keys$Author) && nchar(info$keys$Author) > 0) {
-    return(trimws(info$keys$Author))
-  }
-
-  # Check metadata XML for dc:creator
+  # Check metadata XML for dc:creator FIRST (most complete)
   if (!is.null(info$metadata) && nchar(info$metadata) > 0) {
     # Extract dc:creator section (with DOTALL mode to match across newlines)
     creator_section <- regmatches(
@@ -326,11 +329,18 @@ extract_authors_internal <- function(info) {
         authors <- authors[nchar(authors) > 0]
 
         if (length(authors) > 0) {
+          # Clean non-ASCII characters
+          authors <- clean_text_encoding(authors)
           # Return as semicolon-separated string
           return(paste(authors, collapse = "; "))
         }
       }
     }
+  }
+
+  # Check Author field second
+  if (!is.null(info$keys$Author) && nchar(info$keys$Author) > 0) {
+    return(clean_text_encoding(trimws(info$keys$Author)))
   }
 
   # Check Creator field
@@ -339,12 +349,12 @@ extract_authors_internal <- function(info) {
     creator <- trimws(info$keys$Creator)
     if (
       !grepl(
-        "(Adobe|Microsoft|Word|InDesign|LaTeX|TeX|Elsevier|pdfTeX)",
+        "(Adobe|Microsoft|Word|InDesign|LaTeX|TeX|Elsevier|pdfTeX|Springer)",
         creator,
         ignore.case = TRUE
       )
     ) {
-      return(creator)
+      return(clean_text_encoding(creator))
     }
   }
 
@@ -356,13 +366,77 @@ extract_authors_internal <- function(info) {
       if (field_name %in% names(info$keys)) {
         field <- info$keys[[field_name]]
         if (!is.null(field) && nchar(field) > 0) {
-          return(trimws(field))
+          return(clean_text_encoding(trimws(field)))
         }
       }
     }
   }
 
   return(NA_character_)
+}
+
+
+#' Internal function to clean text encoding issues
+#' @keywords internal
+#' @noRd
+clean_text_encoding <- function(text) {
+  if (length(text) == 0) {
+    return(text)
+  }
+  if (all(is.na(text))) {
+    return(text)
+  }
+  if (!is.character(text)) {
+    return(text)
+  }
+
+  # Vectorized operations
+  # Replace common Unicode characters with ASCII equivalents
+  text <- gsub("\u2018|\u2019", "'", text) # Smart single quotes
+  text <- gsub("\u0080\u0099", "'", text) # Curly apostrophe (UTF-8 bytes)
+  text <- gsub("â\u0080\u0099", "'", text) # Another encoding of apostrophe
+  text <- gsub("\u201c|\u201d", '"', text) # Smart double quotes
+  text <- gsub("\u2013|\u2014", "-", text) # En-dash and em-dash
+  text <- gsub("\u2026", "...", text) # Ellipsis
+  text <- gsub("\u00a0", " ", text) # Non-breaking space
+
+  # Decode HTML entities
+  text <- gsub("&amp;", "&", text)
+  text <- gsub("&lt;", "<", text)
+  text <- gsub("&gt;", ">", text)
+  text <- gsub("&quot;", '"', text)
+  text <- gsub("&apos;", "'", text)
+  text <- gsub("&#39;", "'", text)
+
+  # Convert to ASCII, transliterating when possible (element by element)
+  text <- sapply(
+    text,
+    function(x) {
+      if (is.na(x)) {
+        return(x)
+      }
+      # Try to convert, if it fails keep original
+      result <- tryCatch(
+        {
+          iconv(x, "UTF-8", "ASCII//TRANSLIT", sub = "'")
+        },
+        error = function(e) x
+      )
+
+      # If conversion created weird patterns like ^a', just remove them
+      result <- gsub("\\^[a-z]'", "'", result)
+      result <- gsub("\\^[A-Z]'", "'", result)
+
+      return(result)
+    },
+    USE.NAMES = FALSE
+  )
+
+  # Clean up any remaining issues
+  text <- gsub("[^[:print:]]", "", text) # Remove non-printable characters
+  text <- trimws(text)
+
+  return(text)
 }
 
 
@@ -386,7 +460,7 @@ extract_journal_internal <- function(info) {
       # Remove XML tags
       journal <- gsub("<.*?>", "", journal_match[1])
       if (nchar(trimws(journal)) > 0) {
-        return(trimws(journal))
+        return(clean_text_encoding(trimws(journal)))
       }
     }
   }
@@ -395,26 +469,14 @@ extract_journal_internal <- function(info) {
   if (!is.null(info$keys$Subject) && nchar(info$keys$Subject) > 0) {
     subject <- trimws(info$keys$Subject)
 
-    # Try to extract journal name before year/volume info
-    # Pattern: "Journal Name, VOLUME (YEAR) PAGES"
+    # Try to extract journal name before comma or "doi:"
     journal_match <- regmatches(
       subject,
-      regexpr("^[^,0-9]+(?=,?\\s*\\d)", subject, perl = TRUE)
+      regexpr("^[^,]+(?=,|\\s+doi:)", subject, perl = TRUE)
     )
 
     if (length(journal_match) > 0) {
-      return(trimws(journal_match[1]))
-    } else {
-      # If no pattern match, try to extract everything before "doi:"
-      journal_match <- regmatches(
-        subject,
-        regexpr("^.*?(?=\\s*doi:)", subject, perl = TRUE)
-      )
-      if (length(journal_match) > 0) {
-        # Remove trailing punctuation and whitespace
-        journal <- gsub("[.,;:\\s]+$", "", journal_match[1])
-        return(trimws(journal))
-      }
+      return(clean_text_encoding(trimws(journal_match[1])))
     }
   }
 
@@ -464,11 +526,15 @@ extract_year_internal <- function(info) {
     }
   }
 
-  # Check Subject field for year
+  # Check Subject field for year (but avoid DOI patterns)
   if (!is.null(info$keys$Subject) && nchar(info$keys$Subject) > 0) {
+    subject <- info$keys$Subject
+    # Remove DOI part to avoid matching years in DOI
+    subject_clean <- gsub("doi:.*$", "", subject, ignore.case = TRUE)
+
     year_match <- regmatches(
-      info$keys$Subject,
-      regexpr("\\b(19|20)\\d{2}\\b", info$keys$Subject)
+      subject_clean,
+      regexpr("\\b(19|20)\\d{2}\\b", subject_clean)
     )
     if (length(year_match) > 0) {
       return(as.integer(year_match[1]))
